@@ -29,7 +29,7 @@ convertMouseGeneList <- function(x){
   return(humanx)
 }
 
-allgenes <- as.data.frame(rownames(LDAO))
+allgenes <- as.data.frame(rownames(LDAO)) #set data
 TERVA2_genes_converted <- convertMouseGeneList(allgenes)
 TERVA2_genes_converted <-as.data.frame(TERVA2_genes_converted)
 

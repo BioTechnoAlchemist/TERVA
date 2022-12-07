@@ -5,6 +5,7 @@ Idents(TERVA2_harmony) <- "celltype"
 count_table <- as.data.frame(table(TERVA2_harmony@meta.data$celltype, TERVA2_harmony@meta.data$Sample, TERVA2_harmony@meta.data$group_id))
 
 library(tidyverse)
+library(patchwork)
 
 #### All in one go ####
 rm <- c("29":"35")
@@ -86,49 +87,9 @@ p4 <- ggplot(p4, aes(x=Var1, y=Prop_cells, fill= status)) +
 
 grid.arrange(p1,p2,p3,p4, ncol=2)
 
-library(patchwork)
 p1 | p2
 p1 
 p2
 p3
 p4
 
-#### Tests hide ####
-element_expression_plot <- function(index,elements=TSSs4YCNS_permissive){
-  plot <- data.frame(TPM = assay(elements, “TPM”)[index,]) # in the TPM normalized expression assay, select row of the enhancer candidate of interest and save as a column of a dataframe
-  plot$term <- elements$term # next to each count add the term of the sample
-  plot$organ_system <- elements$organ_system # next to each count add the organ system of the sample
-  plot$animal_id<- elements$animal_id
-  plot$sample_origin<- elements$sample_origin
-  plot$Library_id<- elements$Library_id
-  plot <- arrange(plot, organ_system, term) # sort the dataframe by organ system, so that terms of the same organ will be grouped together
-  plot$term <- factor(plot$term, levels=unique(plot$term)) # make terms a factor so that above order is kept in plot
-  ggplotly(ggplot(plot, aes(x=term, y=TPM), guide_legend(title=“term”)) + # basic plot of expression values per term with title
-             geom_jitter(aes(color=sample_origin), width=0.25) +
-             labs(title=“TPM normalized expression”, subtitle=index, x=element_blank())+
-             scale_y_continuous(trans = pseudo_log_trans(base = 10)) +
-             theme(axis.text.x = element_text(size=12,angle = 30))
-  )
-}
-
-cellorg <- mutate(celltable,
-                     org = case_when(
-                       contains(celltable$Var1 == "B cells") ~ "B cells",
-                       contains(celltable$Var1 == "Plasma cells") ~ "B cells",
-                       contains(celltable$Var1 == "Fibro") ~ "Fibroblasts",
-                       contains(celltable$Var1 == "Tcells" ) ~ "T cells",
-                       contains(celltable$Var1 == "Tregs" ) ~ "T cells",
-                       contains(celltable$Var1 == "Teffs" ) ~ "T cells",
-                       contains(celltable$Var1 == "EC's") ~ "Endothelial cells",
-                       contains(celltable$Var1 == "Macrophages") ~ "Macrophages",
-                       contains(celltable$Var1 == "onocytes") ~ "Monocytes",
-                       contains(celltable$Var1 == "VSMC") ~ "VSMC's",
-                       contains(celltable$Var1 == "DC") ~ "DC's",
-                       contains(celltable$Var1 == "ILC") ~ "ILC's and NK cells",
-                       contains(celltable$Var1 == "NK") ~ "ILC's and NK cells",
-                       contains(celltable$Var1 == "Granulocytes" ) ~ "Granulocytes",
-                       contains(celltable$Var1 == "MAST" ) ~ "Granulocytes",
-                       contains(celltable$Var1 == "Divi") ~ "Dividing cells"
-                     ))
-tissue_id <- tissuedata$Tissue
-TERVA2_harmony@meta.data$tissue_id <- as.factor(tissue_id)
