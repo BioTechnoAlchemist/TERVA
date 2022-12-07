@@ -16,7 +16,6 @@ celltable <- count_table %>%
     Prop_cells = Freq/sum_cells*100,
     sum_prop = sum(Prop_cells))
   
-
 celltableplot <- lapply(split(celltable, celltable$Var2), 
                         function(x) 
                           ggplot(x, aes(x=Var1, y=Prop_cells)) +

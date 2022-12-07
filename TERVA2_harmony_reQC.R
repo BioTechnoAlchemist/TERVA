@@ -94,7 +94,6 @@ TERVA2 <-  FindClusters(TERVA2, resolution = 0.5)
 #clustersbysample + clustersbyfindcluster
 
 
-
 #### Normalization of ADT data ####
 
 TERVA2 <- NormalizeData(TERVA2, assay = "ADT", normalization.method = "CLR")

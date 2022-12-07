@@ -13,7 +13,6 @@ library(colorBlindness)
 TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "tissue_id") 
 eWAT <- subset(TERVA2_harmony, idents = "eWAT")
 
-
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))

@@ -13,7 +13,9 @@ library(colorBlindness)
 TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "tissue_id") 
 PVAT <- subset(TERVA2_harmony, idents = "PVAT")
 
+
 ##########SOMETHING WEIRD HERE, TARGETS AND LIGANDS SWITCHED PLACE #######
+
 
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))

@@ -175,7 +175,6 @@ IntMono_specific_ligands = sender_ligand_assignment$`Intermediate Monocytes` %>%
 Macroact_specific_ligands = sender_ligand_assignment$`Macrophages activated` %>% names() %>% setdiff(general_ligands)
 Macro_specific_ligands = sender_ligand_assignment$`Macrophages` %>% names() %>% setdiff(general_ligands)
 
-
 ligand_type_indication_df = tibble(
   ligand_type = c(rep("DC2-specific", times = DC2_specific_ligands %>% length()),
                   rep("ILC-specific", times = ILC_specific_ligands %>% length()),
