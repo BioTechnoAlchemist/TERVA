@@ -1,0 +1,321 @@
+---
+title: "TERVA SPATIAL AORTA 2022"
+author: "Lea Mikkola"
+date: '2022-11-11'
+output:
+  html_document:
+    keep_md: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+setwd("/scratch/project_2005050/SPATIAL/")
+
+.libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1", .libPaths()))
+
+library(Matrix)
+library(dplyr)
+library(Seurat)
+library(ggplot2)
+library(patchwork)
+library(hdf5r)
+library(viridis)
+library(clustree)
+
+```
+
+First load the data in with the Load_spatial R script.
+
+*QC*
+
+```{r}
+X <- c(A004A1, A004B1, A006C1, A006D1)
+
+L <- lapply(X, function(x) {
+  x@meta.data[["percent_mito"]] <- PercentageFeatureSet(x, "^MT-")
+  x@meta.data[["percent_ribo"]] <- PercentageFeatureSet(x, "^RP[SL]")
+  return(x)
+})
+
+Y <- c("A004A1", "A004B1", "A006C1", "A006D1") 
+names(L) <- paste0(Y)
+list2env(L, envir = globalenv())
+rm(L)
+
+A004A1.qcF <- A004A1[, A004A1$nFeature_Spatial > 40] #Test different thresholds and visually inspect what would be suitable level.
+A004B1.qcF <- A004B1[, A004B1$nFeature_Spatial > 40]
+A006C1.qcF <- A006C1[, A006C1$nFeature_Spatial > 90]
+A006D1.qcF <- A006D1[, A006D1$nFeature_Spatial > 90]
+
+X <- c(A004A1.qcF, A004B1.qcF, A006C1.qcF, A006D1.qcF)
+do.call(gridExtra::grid.arrange, c(lapply(X, SpatialFeaturePlot, features = "nFeature_Spatial"), ncol=4))
+```
+
+```{r}
+A004A1 <- A004A1[, A004A1$nFeature_Spatial > 40 & A004A1$percent_mito < 15 & A004A1$percent_ribo < 20] 
+A004B1 <- A004B1[, A004B1$nFeature_Spatial > 40 & A004B1$percent_mito < 15 & A004B1$percent_ribo < 20] 
+A006C1 <- A006C1[, A006C1$nFeature_Spatial > 90 & A006C1$percent_mito < 15 & A006C1$percent_ribo < 20] 
+A006D1 <- A006D1[, A006D1$nFeature_Spatial > 90 & A006D1$percent_mito < 15 & A006D1$percent_ribo < 20] 
+
+X <- c(A004A1, A004B1, A006C1, A006D1)
+
+lapply(X, function(x) { #Violinplots
+  VlnPlot(x, features = c("nCount_Spatial", "nFeature_Spatial", "percent_mito", "percent_ribo"), pt.size = 0.1, ncol = 4) + 
+    NoLegend() + plot_annotation(title = "Filtered reads")
+})
+
+lapply(X, function(x) { #Spatial feature plots
+  SpatialFeaturePlot(x, features = c("nCount_Spatial", "nFeature_Spatial", "percent_mito", "percent_ribo"), ncol = 4) + 
+    NoLegend() + plot_annotation(title = "Filtered spots")
+})
+
+```
+
+Identify the highly expressed genes/marker genes.
+
+```{r}
+Identify_markers <- function(x) {
+C = x@assays$Spatial@counts 
+C@x = C@x/rep.int(colSums(C), diff(C@p)) # calculate the sum of the count for each gene and compare them together 
+most_expressed <- order(Matrix::rowSums(C), decreasing = T)[20:1] # Put the top 20 genes in order /high to low counts 
+boxplot(as.matrix(t(C[most_expressed, ])), cex = 0.1, las = 1, xlab = "% total count per cell", 
+    col = (scales::hue_pal())(20)[20:1], horizontal = TRUE)
+}
+
+lapply(X, Identify_markers)
+
+```
+
+Normalization
+
+```{r}
+
+normalized_data <- lapply(X, function(x) {
+  x <- SCTransform(x, assay = "Spatial", verbose = T)
+  return(x)
+})
+
+Y <- c("A004A1qc", "A004B1qc", "A006C1qc", "A006D1qc") 
+names(normalized_data) <- paste0(Y)
+list2env(normalized_data, envir = globalenv())
+rm(normalized_data)
+
+X <- c(A004A1qc, A004B1qc, A006C1qc, A006D1qc)
+
+
+```
+
+Feature plots of genes of interest
+```{r}
+A004A1_fp <- SpatialFeaturePlot(A004A1qc, features = c("LGALS3", "MGP", "CD74", "TIMP1", "SPP1", "FTL"), alpha = c(0.3, 1)) + 
+  plot_annotation("GOI's for A004A1")
+A006C1_fp <- SpatialFeaturePlot(A006C1qc, features = c("LGALS3", "MGP", "CD74", "TIMP1", "SPP1", "FTL"), alpha = c(0.3, 1)) + 
+  plot_annotation("GOI's for A006C1")
+
+A004B1_fp <- SpatialFeaturePlot(A004B1qc,features = c("LGALS3", "MGP", "CD74", "TIMP1", "SPP1", "FTL"), alpha = c(0.3, 1)) +
+  plot_annotation("GOI's for A004B1")
+A006D1_fp <- SpatialFeaturePlot(A006D1qc,features = c("LGALS3", "MGP", "CD74", "TIMP1", "SPP1", "FTL"), alpha = c(0.3, 1)) +
+  plot_annotation("GOI's for A006D1")
+
+A004B1_fp  
+A006C1_fp
+A004A1_fp  
+A006D1_fp
+```
+
+```{r}
+#If both CA and AO samples in the same environment, look at the best sections of each sample type together
+A006C1_fp | C004B1_fp 
+A006C1_mcphg | C004B1_mcphg
+
+```
+
+
+```{r}
+Lgals3_interact <- SpatialFeaturePlot(A004A1, slot = "data", features = c("LGALS3"), interactive = TRUE)
+l1 <- SpatialFeaturePlot(A004B1qc, features = c("LGALS3"), alpha = c(0.6,1))
+l2 <- SpatialFeaturePlot(A006D1qc, features = c("LGALS3"), alpha = c(0.6,1), pt.size.factor = 1.9)
+l3 <- SpatialFeaturePlot(A004B1qc, features = c("LGALS3"), alpha = c(0,0))
+l4 <- SpatialFeaturePlot(A006D1qc, features = c("LGALS3"), alpha = c(0,0))
+
+l1 + l3 
+l2 + l4
+```
+
+Feature plots of macrophage markers
+```{r}
+
+A004A1_mcphg <- SpatialFeaturePlot(A004A1qc, features = c("CD68", "CD163", "CCL2", "MCAM", "MRC1", "LGALS3"), alpha = c(0.3, 1)) + 
+  plot_annotation("Macrophage's in A004A1")
+A006C1_mcphg <- SpatialFeaturePlot(A006C1qc, features = c("CD68", "CD163", "CCL2", "MCAM", "MRC1", "LGALS3"), alpha = c(0.3, 1)) + 
+  plot_annotation("Macrophage's in A006C1")
+
+A004B1_mcphg <- SpatialFeaturePlot(A004B1qc, features = c("CD68", "CD163", "CCL2", "MCAM", "MRC1", "LGALS3"), alpha = c(0.3, 1)) +
+  plot_annotation("Macrophage's in A004B1")
+A006D1_mcphg <- SpatialFeaturePlot(A006D1qc, features = c("CD68", "CD163", "CCL2", "MCAM", "MRC1", "LGALS3"), alpha = c(0.3, 1)) +
+  plot_annotation("Macrophage's in A006D1")
+
+A004A1_mcphg  
+A006C1_mcphg
+A004B1_mcphg  
+A006D1_mcphg
+
+```
+
+
+#Run PCA
+```{r}
+
+addpca <- lapply(X, function(x) {
+  x <- RunPCA(x, assay = "SCT", verbose = FALSE)
+  return(x)
+})
+
+lapply(addpca, ElbowPlot)
+
+names(addpca) <- paste0(Y)
+list2env(addpca, envir = globalenv())
+rm(addpca)
+
+X <- c(A004A1qc, A004B1qc, A006C1qc, A006D1qc)
+
+```
+
+Find neighbors and clusters and run UMAP.
+```{r}
+
+ncu_all <- lapply(X, function(x) {
+  x <- FindNeighbors(x, reduction = "pca", dims = 1:15) #The number of dimension was decided based on elbow plots. There weren't huge differences so an average across the samples is used for the maximum.
+  x <- RunUMAP(x, reduction = "pca", dims = 1:15)
+  return(x)
+})
+
+names(ncu_all) <- paste0(Y)
+list2env(ncu_all, envir = globalenv())
+rm(ncu_all)
+
+X <- c(A004A1qc, A004B1qc, A006C1qc, A006D1qc)
+
+
+```
+
+
+Run Clustree to determine the appropriate number of clusters 
+```{r}
+clusters <- lapply(X, function(x){ #This run FindClusters with a range of resolutions that are saved into metadata and can be then used with the clustree function.
+  resolution.range <- seq(from = 0, to = 1, by = 0.1)
+  x <- FindClusters(x, resolution = resolution.range)
+})
+
+
+names(clusters) <- paste0(Y)
+
+lapply(clusters, function(x) {
+  clustree(x) + ggtitle(names(x), "Cluster tree")
+} ) 
+#FIX NAMING OF THE PLOTS LATER
+```
+Resolution 0.3 should suffice across these samples.
+
+
+Plot UMAP and spatial dimensional plot (clustering on tissue)
+
+```{r}
+
+do.call(gridExtra::grid.arrange, c(lapply(X, DimPlot, group.by = "SCT_snn_res.0.3", reduction = "umap", pt.size = 0.1), ncol=2))
+do.call(gridExtra::grid.arrange, c(lapply(X, SpatialDimPlot, label = F, label.size = 1), ncol=4))
+
+
+```
+
+1. Identification of all markers for each cluster: this analysis compares each cluster against all others and outputs the genes that are differentially expressed/present
+2. dentification of conserved markers for each cluster: This analysis looks for genes that are differentially expressed/present within each condition first, and then reports those genes that are conserved in the cluster across all conditions. These genes can help to figure out the identity for the cluster.
+ 
+
+3. Identification of Variable Features:
+
+```{r}
+# differential expression genes in all clusters 
+
+lapply(X, function(x) { #Only one SCT model found, recorrection skipped.
+  x <- PrepSCTFindMarkers(x)
+return(x)
+})
+
+Y <- c("A004A1_markers", "A004B1_markers", "A006C1_markers", "A006D1_markers")
+
+Markers <- lapply(X, function(x) {
+  FindAllMarkers(x)
+})
+names(Markers) <- paste0(Y)
+list2env(Markers, envir = globalenv())
+rm(Markers)
+saveRDS(A004A1_markers, "A004A1_markers.rds")
+saveRDS(A004B1_markers, "A004B1_markers.rds")
+saveRDS(A006C1_markers, "A006C1_markers.rds")
+saveRDS(A006D1_markers, "A006D1_markers.rds")
+
+p1 <- SpatialFeaturePlot(object = A004A1qc, features = rownames(A004A1_markers)[1:12], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for A004A1")
+p2 <- SpatialFeaturePlot(object = A004B1qc, features = rownames(A004B1_markers)[1:12], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for A004B1")  
+p3 <- SpatialFeaturePlot(object = A006C1qc, features = rownames(A006C1_markers)[1:12], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for A006C1")
+p4 <- SpatialFeaturePlot(object = A006D1qc, features = rownames(A006D1_markers)[1:12], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for A006D1")
+
+p1
+p3
+p2
+p4
+
+```
+
+Find Spatially variable features.
+
+```{r}
+
+SVF <- lapply(X, function(x) {
+  x <- FindSpatiallyVariableFeatures(x, assay = 'SCT', selection.method = 'markvariogram',  features = VariableFeatures(x)[1:1000])
+return(x)
+})
+
+Y <- c("A004A1_SVGs", "A004B1_SVGs", "A006C1_SVGs", "A006D1_SVGs") 
+names(SVF) <- paste0(Y)
+list2env(SVF, envir = globalenv())
+rm(SVF)
+
+X <- c(A004A1_SVGs, A004B1_SVGs, A006C1_SVGs, A006D1_SVGs) 
+top.features <- lapply(X, function(x) {
+  x <- head(SpatiallyVariableFeatures(x, selection.method = "markvariogram"), 20)
+  return(x)
+})
+
+Y <- c("A004A1_SVGs", "A004B1_SVGs", "A006C1_SVGs", "A006D1_SVGs") 
+names(top.features) <- paste0(Y)
+list2env(top.features, envir = globalenv())
+rm(top.features)
+
+
+A004A1_SFP <- SpatialFeaturePlot(A004A1qc, features = A004A1_SVGs[1:10], ncol = 5, alpha = c(0.3, 1)) + 
+  plot_annotation(title = "Spatially variable features A004A1")
+  
+A004B1_SFP <- SpatialFeaturePlot(A004B1qc, slot = "data", features = A004B1_SVGs[1:10], ncol = 5, alpha = c(0.3, 1)) +
+  plot_annotation(title = "Spatially variable features A004B1")
+
+A006C1_SFP <- SpatialFeaturePlot(A006C1qc, features = A006C1_SVGs[1:10], ncol = 5, alpha = c(0.3, 1)) +
+  plot_annotation(title = "Spatially variable features A006C1")
+
+A006D1_SFP <- SpatialFeaturePlot(A006D1qc, slot = "data", features = A006D1_SVGs[1:10], ncol = 5, alpha = c(0.3, 1)) +
+  plot_annotation(title = "Spatially variable features A006D1")
+
+A004B1_SFP  
+A006D1_SFP
+
+```
