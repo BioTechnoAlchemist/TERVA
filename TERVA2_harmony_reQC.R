@@ -1,19 +1,8 @@
 #### TERVA2 data integration with harmony ####
 setwd("/scratch/project_2005050/Rstats")
+.libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1/", .libPaths()))
+pacman::p_load(SeuratDisk, Seurat, tidyverse, patchwork, cowplot, viridis, gridExtra, RColorBrewer, factoextra, clustree, harmony, colorBlindness, EnhancedVolcano, clusterProfiler, biomaRt, org.Mm.eg.db)
 
-.libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1", .libPaths()))
-
-library(harmony)
-library(SeuratDisk)
-library(Seurat)
-library(tidyverse)
-library(patchwork)
-library(cowplot)
-library(viridis)
-library(gridExtra)
-library(clustree)
-library(RColorBrewer)
-library(EnhancedVolcano)
 
 #devtools::install_github('satijalab/seurat-data')
 #BiocManager::install("EnhancedVolcano")
@@ -23,14 +12,18 @@ library(EnhancedVolcano)
 #}
 #remotes::install_github("mojaveazure/seurat-disk")
 
+#BiocManager::install("clusterProfiler")
+
+#BiocManager::install("org.Mm.eg.db")
+
 #### Load in H5 data ####
 
-LDAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDAOafterQC2.h5Seurat") #ReQC
-PLAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLAOafterQC2.h5Seurat") #ReQC
+LDAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDAOafterQC2.h5Seurat") 
+PLAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLAOafterQC2.h5Seurat") 
 LDeWAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/LD_eWATafterQC.h5Seurat")
-PLeWAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLeWATafterQC2.h5Seurat") #ReQC
+PLeWAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLeWATafterQC2.h5Seurat") 
 LDPVAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDPVATafterQC.h5Seurat")
-PLPVAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLPVATafterQC2.h5Seurat") #ReQC
+PLPVAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLPVATafterQC2.h5Seurat")
 LDSpleen <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDSpleenafterQC.h5Seurat")
 PLSpleen <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLSpleenafterQC.h5Seurat")
 
@@ -58,15 +51,8 @@ PLSpleen@meta.data$Sample <- as.factor(New_idents)
 # merge.data=T 
 TERVA2 <-  merge(LDAO, y = c(PLAO, LDeWAT, PLeWAT, LDPVAT, PLPVAT, LDSpleen, PLSpleen), add.cell.ids = c("LDAO", "PLAO", "LDeWAT", "PLeWAT", "LDPVAT", "PLPVAT", "LDSpleen", "PLSpleen"), project = "TERVA2", merge.data = T)
 
-remove("LDAO","LDeWAT","PLeWAT","LDSpleen", "PLAO", "LDPVAT", "PLPVAT", "PLSpleen", "New_idents")
+TERVA2
 
-TERVA2 
-#An object of class Seurat 
-#32423 features across 47495 samples within 2 assays 
-#Active assay: RNA (32285 features, 0 variable features)
-#1 other assay present: ADT
-
-#unique(TERVA2@meta.data$Sample)
 table(TERVA2$Sample)
 #LDAO   LDeWAT   LDPVAT LDSpleen     PLAO   PLeWAT   PLPVAT PLSpleen 
 #3048     8076     7396     4234     7661     6420     5396     5264 
@@ -76,241 +62,207 @@ table(TERVA2$Sample)
 # See https://portals.broadinstitute.org/harmony/SeuratV3.html. Before running Harmony, make a Seurat object and following the standard pipeline through PCA.
 #IMPORTANT DIFFERENCE: In the Seurat integration tutorial, you need to define a Seurat object for each dataset. With Harmony integration, create only one Seurat object with all cells.
 
-#no need to re-normalize as the merged objects have normalized data. Just do rescaling.
+remove("LDAO","LDeWAT","PLeWAT","LDSpleen", "PLAO", "LDPVAT", "PLPVAT", "PLSpleen", "New_idents")
+
+# Remove some genes that commonly cause technical noise
+
+genes <- GetAssayData(TERVA2, assay = "RNA")
+kept.genes <- genes[-(which(rownames(genes) %in% c('Gm42418','AY036118'))),]
+TERVA2[["RNA"]] <- CreateAssayObject(counts = kept.genes)
+rm(genes, kept.genes)
+
+TERVA2 <- NormalizeData(TERVA2) #We need to re-normalize because we removed the two genes above.
 TERVA2 <- ScaleData(TERVA2, features = rownames(TERVA2), verbose = FALSE)
 TERVA2 <- FindVariableFeatures(TERVA2, selection.method = "vst", nfeatures = 3000)
 TERVA2 <- RunPCA(TERVA2, verbose = FALSE)
-#ElbowPlot(TERVA2)
+#Create mat and pca objects for calculating the total variance:
+mat <- GetAssayData(TERVA2, assay = "RNA", slot = "scale.data")
+pca <- TERVA2[["pca"]]
+# Get the total variance:
+total_variance <- sum(matrixStats::rowVars(mat))
+eigValues = (pca@stdev)^2  ## EigenValues
+varExplained = eigValues / total_variance
+props <- eigValues / sum(eigValues)
+plot(props, ylab="Proportion of variance", xlab="Principal Component",main = "Proportion of variance explained by the PC's")
+rm(mat, pca)
+gc()
 
 TERVA2 <- RunUMAP(TERVA2, dims = 1:20)
-TERVA2 <-  FindNeighbors(TERVA2, dims = 1:20)
-TERVA2 <-  FindClusters(TERVA2, resolution = 0.5) 
+TERVA2 <- FindNeighbors(TERVA2, dims = 1:20)
+TERVA2 <- FindClusters(TERVA2, resolution = 0.5, random.seed = 42) 
 
 # Check how the non-integrated data looks after merging and normalization.
 
-#clustersbysample <- DimPlot(TERVA2, reduction = "umap", pt.size=0.5, label = T, group.by = "Sample")
-#clustersbyfindcluster <- DimPlot(TERVA2, reduction = "umap", pt.size=0.5, label = T, group.by = "RNA_snn_res.0.5")
+cbcols <- c("#000000", "#004949", "#009292", "#ff6db6", "#ffb6db", "#490092", "#006ddb", "#b66dff")
+clustersbysample <- DimPlot(TERVA2, reduction = "umap", shuffle = T, repel = T, pt.size = 2, group.by = "Sample", cols = cbcols) +
+  labs(title = "UMAP projection of the merged data") +
+  theme(plot.title = element_text(size=30, hjust= 0.5),
+    legend.text = element_text(size = 30),
+    axis.title = element_text(size = 30))
 
-#clustersbysample + clustersbyfindcluster
-
+clustersbysample 
 
 #### Normalization of ADT data ####
+
+abs <- GetAssayData(TERVA2, assay = "ADT")
+kept.abs <- abs[-(which(rownames(abs) %in% c('CD11a'))),] # Remove one antibody that BioLegend reported to be of poor quality
+TERVA2[["ADT"]] <- CreateAssayObject(counts = kept.abs)
+rm(abs, kept.abs)
 
 TERVA2 <- NormalizeData(TERVA2, assay = "ADT", normalization.method = "CLR")
 TERVA2 <- ScaleData(TERVA2, assay = "ADT")
 TERVA2 <- RunPCA(TERVA2, assay = "ADT", reduction.name = "apca", features = rownames(TERVA2@assays$ADT))
 
-#saveRDS(TERVA2, "TERVA2_reQC.rds")
-
 #### Running Harmony ####
 
-TERVA2_harmony <- TERVA2 %>% RunHarmony("Sample", plot_convergence = T)
-#saveRDS(TERVA2_harmony, "TERVA2_harmony2.rds")
-
-#### Read in saved harmonized data ####
-
-#Use the one further down with the name TERVA2_harmony_2.
-#TERVA2_harmony <- readRDS("/scratch/project_2005050/Rstats/TERVA2_harmony.rds") #use this to skip all the preliminary steps before harmony. Md5sum checked: ok.
-
+TERVA2_harmony <- TERVA2 %>% RunHarmony(group.by.vars = "Sample", plot_convergence = T)
 
 TERVA2_harmony <- TERVA2_harmony %>% 
-  RunUMAP(reduction = "harmony", dims = 1:30, verbose = F) %>% 
-  FindNeighbors(reduction = "harmony", k.param = 10, dims = 1:30) %>% 
-  FindClusters(resolution = 0.6) %>% 
-  identity()
+  RunUMAP(reduction = "harmony", dims = 1:20, verbose = F) %>% 
+  FindNeighbors(reduction = "harmony", dims = 1:20)
 
-#### Clustree ####
-
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0)
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.1)
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.2)
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.3)
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.4)
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.5) 
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.6) #This seems to be optimal resolution
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.7)
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.8)
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 0.9)
-TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = 1)
-
-library(clustree)
-plot_cls1 <- clustree(TERVA2_harmony)
-plot_cls2 <- clustree(TERVA2_harmony, node_colour= "Cd79a", node_colour_aggr= "median")
-plot_cls3 <- clustree(TERVA2_harmony, node_colour= "Cd3d", node_colour_aggr= "median")
-plot_cls4 <- clustree(TERVA2_harmony, node_colour= "Ighm", node_colour_aggr= "median")
-
-plot_cls1
-
-
-
-
-# Plot how integrated data sets are presented within clusters
-
-
-plot_integrated_clusters(TERVA2_harmony)
-
-#### Cell cycle analysis ####
-#exp.mat <- read.table(file = "/scratch/project_2005050/Rstats/nestorawa_forcellcycle_expressionMatrix.txt", header = TRUE,
-#                      as.is = TRUE, row.names = 1)
-
-s.genes <- str_to_title(cc.genes$s.genes) #If this gives an error, reinstall package stringr 
-g2m.genes <- str_to_title(cc.genes$g2m.genes)
-
-TERVA2_harmony <- CellCycleScoring(object = TERVA2_harmony, g2m.features = g2m.genes, 
-                                   s.features = s.genes)
-TERVA2_harmony@meta.data %>%
-  group_by(seurat_clusters,Phase) %>%
-  count() %>%
-  group_by(seurat_clusters) %>%
-  mutate(percent=100*n/sum(n)) %>%
-  ungroup() %>%
-  ggplot(aes(x=seurat_clusters,y=percent, fill=Phase)) +
-  geom_col() +
-  ggtitle("Percentage of cell cycle phases per cluster")
-
-
-#### Check how everything looks at this point, some basic plots ####
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "Sample")
-clbysample_harmony <- DimPlot(TERVA2_harmony,reduction = "umap") + plot_annotation(title = "TERVA2 samples after integration (Harmony)")
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.6")
-clbycl_harmony <- DimPlot(TERVA2_harmony,label = T) + NoLegend()
-
-clbysample_harmony + clbycl_harmony
-
-VlnPlot(TERVA2_harmony, features = c("Igkv3-4", "Igkv1-135",	"Ighv1-72",	"Igkv4-55",	"Jchain", "Ighm")) #,	"Igkv5-43",	"Ighv9-3",	"Igkv3-12",	"Igkv12-46",	"Ighv10-3",	"Igkv6-20",	"Igkv12-44",	"Igkv5-39",	"Iglv1",	"Igkv4-57",	"Ighv1-26",	"Igkv9-120",	"Iglc2",	"Igkv6-15",	"Igkv3-10",	"Igkv19-93",	"Igkv4-91",	"Igkc",	"Ighm",	"Igkv10-96",	"Ighv9-4",	"Igtp",	"Igkv12-89",	"Igkv1-99",	"Igkv4-59",	"Iglc3",	"Igf2r",	"Ighv1-78",	"Igf1",	"Ighv5-16",	"Ighv1-72",	"Igsf6",	"Igbp1",	"Ighv1-62-2",	"Igkv14-111",	"Igkv1-110",	"Iglv3",	"Ighv1-81",	"Ighg3",	"Ighg2c",	"Iglc1",	"Ighg2b",	"Ighv1-53",	"Igfbp6",	"Igsf9b",	"Ighv2-9",	"Ighv14-2",	"Igf1r",	"Igsf8",	"Igfbp-7",	"Igfbp3",	"Igfbp5",	"Igsf1",	"Igdcc4",	"Igsf3",	"Igkv16-104",	"Igha",	"Igkv4-79",	"Ighv5-9",	"Ighv9-2",	"Ighv1-50",	"Ighv1-85",	"Ighv3-6",	"Ighv6-3",	"Igfbp7",	"Iglv2",	"Igsf10",	"Ighv1-15",	"Igfbp4",	"Ighd", "Igflr1",	"Ighv1-69",	"Igkv17-121",	"Ighv1-9",	"Ighv1-18",	"Ighv1-64",	"Igkv6-17",	"Ighv1-55",	"Igkv6-25",	"Igkv17-127",	"Ighj2",	"Ighv1-80",	"Igkj2"))
-
-
-
-FOI <- FeaturePlot(TERVA2_harmony, features= c("Slc7a7", "Lgals3", "Ly6a"), split.by = "Sample", pt.size = 1)
-Fcellannot <- FeaturePlot(TERVA2_harmony, features= c("Myh11", "Nkg7", "Rora", "Gata3", "Dcn", "Vcam1", "Col2a1", "Rgs5", "Cd34", "Upk3b", "Pecam1", "Cd79a", "Cd3d", "Cd68", "Spp1", "S100a8", "S100a9", "Top2a")) 
-Fadip <- FeaturePlot(TERVA2_harmony, features= c("Adipoq", "Pdgfra", "Ces1f", "Btc", "Apoe", "Cacna1a", "Prune2", "Mt2", "Tcf21"))
-Fangio <- FeaturePlot(TERVA2_harmony, features= c("Cdh5", "Sdpr", "Egfl7", "Ptprb", "Ecscr", "Cldn5", "Icam2", "Slc9a3r2", "Myh11", "Cnn1", "Vcam1", "Cd36"))
-TB <- FeaturePlot(TERVA2_harmony, features= c("Cd79a", "Cd3d"))
-CD4_CD8 <- FeaturePlot(TERVA2_harmony, features= c("Cd8a", "CD8a", "Ccl5", "Cd4", "CD4", "Foxp3", "Icos", "Kit", "Il23r"))
-Plasmacells <- FeaturePlot(TERVA2_harmony, features = c("Ighd", "IgD", "CD138-Syndecan-1", "CD45R-B220", "Tnfrsf17", "Cxcr4"))
-Monocytes <- FeaturePlot(TERVA2_harmony, features = c("Ly-6C", "Cx3cr1", "Ccr2", "Sell", "Spn", "Cd209a", "I-A-I-E", "Treml4"))
-DCs <- FeaturePlot(TERVA2_harmony, features = c("Ptprc", "CD11c", "I-A-I-E", "Ly-6C", "Bst2", "SiglecH", "CD45R-B220", "Cd8a", "Xcr1", "CD24", "CD370-CLEC9A-DNGR1", "Cd4", "Sirpa", "CD11b"))
-Macrophages <- FeaturePlot(TERVA2_harmony, features = c("Cd163","Cd80", "Cd86", "Ccr5", "CD11b", "CD11c", "Cd14", "CD15-SSEA-1", "Cd68", "Cd36", "Ptgs2", "Irf5", "Stat1", "Nos2", "Cxcr1", "Cxcr2", "Mrc1", "Irf4", "Stat6", "Socs3", "Sphk1", "Tlr8"))
-Fcrs <- FeaturePlot(TERVA2_harmony, features = c("B2m","Ero1l", "Fcamr", "Fcer1a", "Fcer1g", "Fcer2a", "Fcgrt", "Fcrla", "Fcrlb", "Fcrls", "Fcrl1", "Fcrl5", "Fcrl6", "Fcgbp", "Fcgrt", "Fcgr2b", "Fcgr4", "Fcgr3", "Fcgr1"))
-Igs_lc <- FeaturePlot(TERVA2_harmony, split.by = "Sample", features = c("Igkv3-4", "Igkv4-55", "Igkv1-135",  "Jchain", "Ighm"))
-Lgals3 <- FeaturePlot(TERVA2_harmony, split.by = "Sample", features = c("Lgals3") , pt.size = 1)
-Rgs5 <- FeaturePlot(TERVA2_harmony, features = c("Rgs5") , pt.size = 1)
-
-
-Idents(TERVA2_harmony) <- "celltype"
-VlnPlot(TERVA2_harmony, features = c("Lgals3"), idents = c("Macrophages","Macrophages activated","Intermediate monocytes", "Classical and non-classical monocytes", "Lgals3+ Macrophages", "Granulocytes", "Vascular smooth muscle cells", "Fibroblasts", "Fibroblasts activated"), split.by = "Sample", cols = c("darkorange", "magenta", "cyan4", "tomato", "turquoise2", "plum3", "slateblue2", "yellow")) # + theme(legend.position = 'none')
-Idents(TERVA2_harmony) <- "celltype.group"
-RidgePlot(TERVA2_harmony, features = c("Lgals3"), idents = c("Macrophages_Late_disease", "Macrophages_Prelesion","Macrophages activated_Late_disease","Macrophages activated_Prelesion", "Lgals3+ Macrophages_Late_disease", "Lgals3+ Macrophages_Prelesion", "Vascular smooth muscle cells_Late_disease", "Vascular smooth muscle cells_Prelesion", "Fibroblasts_Late_disease", "Fibroblasts_Prelesion"), sort = "increasing") + NoLegend()
-DoHeatmap(TERVA2_harmony, features = c("Lgals3"))
-
-Generalmarkers %>%
-  group_by(cluster) %>%
-  top_n(n = 3, wt = avg_log2FC) -> top10
-heatmap <- DoHeatmap(TERVA2_harmony, features = top10$gene) + NoLegend()
-
-FOI
-Fcellannot
-Fadip | Fangio
-TB
-CD4_CD8
-Plasmacells
-Monocytes
-DCs
-Macrophages
-Fcrs
-Igs_lc
-Lgals3
-
-
-FeaturePlot(TERVA2_harmony, features = c("CD4", "CD8a", "CD366-Tim-3", "CD279-PD-1", "CD117-c-kit", "Ly-6C", "CD11b","Ly-6G", "CD49f", "CD44", "CD54", "CD90.2", "CD15-SSEA-1", "CD73"))
-
-molecule_counts <- VlnPlot(TERVA2_harmony, features = "nCount_RNA", group.by = "RNA_snn_res.0.6")
-gene_counts <- VlnPlot(TERVA2_harmony, features = "nFeature_RNA", group.by = "RNA_snn_res.0.6")
-
-molecule_counts + gene_counts | clbycl_harmony
-
-# Subset the CD79a and Cd3d positive cluster. After removing this, the cell numbers per sample drop, especially in the aorta samples.
-#TERVA2_harmony <- subset(TERVA2_harmony, subset = RNA_snn_res.0.6 %in% c(0:8,10:35)) #Remove cluster 9 that's CD79a and Cd3d positive and might bias subsequent workflows
-
-
-# Check CD45 and eWAT markers across the data
-
-T2_harmony_ptprcvsTcf21 <- FeaturePlot(TERVA2_harmony, features= c("Ptprc", "Tcf21"))
-
-T2_harmony_ptprcvsTcf21 + T2_merged_ptprcvsTcf21 + 
-  plot_layout(ncol = 2, widths = c(1,1))
-
-#### Crude check of TCR/BCR cells across the data ####
-library(dittoSeq)
-v1 <- dittoDimPlot(TERVA2_harmony, var = "TCR_chains", size = 2,
-                   cells.use = grepl("TRA", TERVA2$TCR_chains, fixed = TRUE), 
-                   show.others = TRUE)
-
-v2 <- dittoDimPlot(TERVA2_harmony, var = "BCR_isotype", size = 2,
-                   cells.use = grepl("IGHM", TERVA2$BCR_isotype, fixed = TRUE), 
-                   show.others = TRUE)
-v1 + v2 + TB + TCRplot + BCRplot
-
-FeaturePlot(TERVA2_harmony, features = c("CD278-ICOS-clone7E.17G9", "Icos", "CD117-c-kit", "Kit", "CD127-IL-7Ralpha", "Ilr7"))
-#CD278, CD117, CD127 ab and ge data
-#Il7r = CD127, Icos = CD278, Kit = CD117 
-
-#TCR markers from the ab data                      
-
-TCRplot <- FeaturePlot(TERVA2_harmony, features = c("TCRValpha8.3-cloneB21.14", "TCRValpha8.3-cloneKT50", "TCRValpha11.1-11.2", "TCRgammadelta", "TCRValpha2"))
-
-# Immunoglobulins and other B cells markers + Cd3d for control
-
-BCRplot <- FeaturePlot(TERVA2_harmony, features = c("IgG1-kappa-isotypeCtrl", "IgG2a-kappa-isotypeCtrl", "IgG2b-unknown-isotypeCtrl", "IgM", "IgD", "CD93-AA4.1-earlyBlineage"))
-
-TCRplot
-BCRplot
+rm(TERVA2)
 
 #### Check the Ab data ####
 
 # Antibody data had varying success rates for the different samples.
-# LD eWAT: high fraction of antibod reads in aggregate barcodes (25.80 %, ideal < 5 %)
 
 ADTs <- as.list(TERVA2_harmony@assays$ADT@counts@Dimnames)
 ADTnames <- ADTs[[1]]
 
-for(i in 1:length(ADTnames)){ #Print and save (138) ADT images to a specific folder
+for(i in 1:length(ADTnames)){ #Print and save (137) ADT images to a specific folder
   FeaturePlot(TERVA2_harmony, ADTnames[i])
-  ggsave(paste0("/scratch/project_2005050/Rstats/", i, ".jpg"))
+  ggsave(paste0("/scratch/project_2005050/Rstats/Manuscriptimages/ABimages/", i, ".jpg"))
   while (!is.null(dev.list()))  dev.off()
 }
 
+
+#### Clustree ####
+
+resolution.range <- seq(from = 0, to = 1, by = 0.1)
+TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = resolution.range, random.seed = 42)
+
+plot_cls1 <- clustree(TERVA2_harmony)
+plot_cls1 +
+  labs(title = "Cluster tree with resolutions from 0 to 1")
+
+#### Check how everything looks at this point, some basic plots ####
+
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "Sample")
+clbysample_harmony <- DimPlot(TERVA2_harmony,reduction = "umap", shuffle = T, cols = cbcols) + labs(title = "Samples after integration (Harmony)")
+clbysample_harmony
+
+nb.cols <- 26
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.5")
+clbycl_harmony_0.5 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 0.5")
+nb.cols <- 29
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.6")
+clbycl_harmony_0.6 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 0.6")
+nb.cols <- 33
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
+clbycl_harmony_0.7 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 0.7")
+nb.cols <- 36
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.8")
+clbycl_harmony_0.8 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 0.8")
+nb.cols <- 39
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.9")
+clbycl_harmony_0.9 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 0.9")
+
+(clbycl_harmony_0.5 + clbycl_harmony_0.6) / (clbycl_harmony_0.7 + clbycl_harmony_0.8 + clbycl_harmony_0.9)
+clbycl_harmony_0.6 + clbycl_harmony_0.7 + clbycl_harmony_0.8
+
+clbysample_harmony + clbycl_harmony_0.7
+
+# Feature plots of some specific markers
+
+Fcellannot <- FeaturePlot(TERVA2_harmony, features= c("Myh11", "Nkg7", "Rora", "Dcn", "Vcam1", "Rgs5", "Cd34", "Upk3b", "Pecam1", "Cd79a", "Cd3d", "Cd68", "Spp1", "S100a8", "S100a9", "Top2a")) 
+TB <- FeaturePlot(TERVA2_harmony, features= c("Cd79a", "Cd3d"))
+Fcellannot
+TB
+
+nb.cols <- 33
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
+clbycl_harmony_0.7 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, label.box = T, label.color = "white") +
+  labs(title = "Clustering with resolution 0.7")
+gene_counts <- VlnPlot(TERVA2_harmony, features = "nFeature_RNA", group.by = "RNA_snn_res.0.7", cols = mycolors)
+gene_counts + clbycl_harmony_0.7
+
+# Remove the CD79a and Cd3d positive cluster. After removing this, the cell numbers per sample drop, especially in the aorta samples.
+TERVA2_harmony <- subset(TERVA2_harmony, subset = RNA_snn_res.0.7 %in% c(0:7,9:32)) #Remove cluster 9 that's CD79a and Cd3d positive and might bias subsequent workflows
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
+clbycl_harmony_0.7 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, label.box = T, label.color = "white") +
+  labs(title = "Clustering with resolution 0.7 after removing Cd79a/Cd3d double-positive cluster")
+clbycl_harmony_0.7
+
+Fadip <- FeaturePlot(TERVA2_harmony, features= c("Adipoq", "Pdgfra", "Ces1f", "Btc", "Apoe", "Cacna1a", "Prune2", "Mt2", "Tcf21"))
+Fangio <- FeaturePlot(TERVA2_harmony, features= c("Cdh5", "Sdpr", "Egfl7", "Ptprb", "Ecscr", "Cldn5", "Icam2", "Slc9a3r2", "Myh11", "Cnn1", "Vcam1", "Cd36"))
+CD4_CD8 <- FeaturePlot(TERVA2_harmony, order = T, features= c("Cd8a", "CD8a", "Ccl5", "Cd4", "CD4", "Foxp3", "Icos", "Kit", "Il23r"))
+Plasmacells <- FeaturePlot(TERVA2_harmony, features = c("Ighd", "IgD", "CD138-Syndecan-1", "CD45R-B220", "Tnfrsf17", "Cxcr4"))
+Monocytes <- FeaturePlot(TERVA2_harmony, features = c("Ly-6C", "Cx3cr1", "Ccr2", "Sell", "Spn", "Cd209a", "I-A-I-E", "Treml4"))
+Macrophages <- FeaturePlot(TERVA2_harmony, order =T, features = c("Cd163","Cd80", "Cd86", "Ccr5", "CD11b", "CD11c", "Cd14", "CD15-SSEA-1", "Cd68", "Cd36", "Ptgs2", "Irf5", "Stat1", "Nos2", "Cxcr1", "Cxcr2", "Mrc1", "Irf4", "Stat6", "Socs3", "Sphk1", "Tlr8"))
+Fcrs <- FeaturePlot(TERVA2_harmony, features = c("B2m","Ero1l", "Fcamr", "Fcer1a", "Fcer1g", "Fcer2a", "Fcgrt", "Fcrla", "Fcrlb", "Fcrls", "Fcrl1", "Fcrl5", "Fcrl6", "Fcgbp", "Fcgrt", "Fcgr2b", "Fcgr4", "Fcgr3", "Fcgr1"))
+Igs_lc <- FeaturePlot(TERVA2_harmony, split.by = "Sample", features = c("Igkv3-4", "Igkv4-55", "Igkv1-135",  "Jchain", "Ighm"))
+Lgals3 <- FeaturePlot(TERVA2_harmony, features = c("Lgals3"))
+Rgs5 <- FeaturePlot(TERVA2_harmony, features = c("Rgs5"))
+Pi16 <-FeaturePlot(TERVA2_harmony, features = c("Pi16"))
+Cd74 <- FeaturePlot(TERVA2_harmony, features = c("Cd74"))
+
+
+Fadip / Fangio
+CD4_CD8
+Plasmacells
+Monocytes
+Macrophages
+Fcrs
+Igs_lc
+Lgals3
+Rgs5
+Pi16
+Cd74
+
+molecule_counts <- VlnPlot(TERVA2_harmony, features = "nCount_RNA", group.by = "RNA_snn_res.0.7", cols = mycolors)
+gene_counts2 <- VlnPlot(TERVA2_harmony, features = "nFeature_RNA", group.by = "RNA_snn_res.0.7", cols = mycolors)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
+clbycl_harmony_0.7 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, pt.size = 2, label.box = T, label.color = "white") +
+  labs(title = "Clustering with resolution 0.7")
+molecule_counts + gene_counts2 | clbycl_harmony_0.7
+
+# Check CD45 across the data
+
+T2_harmony_ptprc <- FeaturePlot(TERVA2_harmony, features= c("Ptprc"), order = T)
+T2_harmony_ptprc
+
+#### Add disease group id ####
+
+coldata <- as.data.frame(TERVA2_harmony@meta.data$Sample)
+
+coldata <- mutate(coldata,
+                  Status = case_when(
+                    startsWith(TERVA2_harmony@meta.data$Sample, "LD") ~ "Late_disease",
+                    startsWith(TERVA2_harmony@meta.data$Sample, "PL") ~ "Prelesion"
+                  ))
+
+group_id <- coldata$Status
+TERVA2_harmony@meta.data$group_id <- as.factor(group_id)
+
 #### Predicting cell types from reference ####
-
-# Tiit's cell types (+ other markers)
-
-#At a very crude cell type level, can see we have cluster of:
-#B cell (Cd79a) (Cd97b, Ebf1, Ms4a1, Ly-6d, Fcmr, Siglecg,H2-dmb2, Vpreb3)
-#T cell (Cd3d) (mem T cells: Cd3g, Lck, Thy1, Ms4a4b, Cd8b1, Ccl5)
-#Natural killer (Nkg7 pos, Cd3d neg)
-#ILC (Rora, Gata3)
-#macrophage/monocyte/myeloid-dendritic (Cd68) (monocytes; S100a9, S100a8, Retnlg, Msrb1, Slpi, Wfdc21, Il1b, G0s2, Lcn2, Cxcl2, macrophages; Retnla, Mt1, C1qb, Fcrls, C1qc, C1qa, Pf4, Sepp1, Lpl, Lyz1; Gngt2, Cst3, Clec4a3, Ifitm3, Plac8, Hes1, Ms4a6c, Lyz2,Atf3, Ear2)
-#endothelial (Pecam1)
-#smooth muscle (Myh11)
-#Pericyte (Rgs5)
-#Possibly neutrophil (S100a9, Csf3r)
-#Fibroblasts and pre-adipocytes (Dcn, Cd34)
-#Epithelial (Upk3b)
-#Dividing cells of various types (Top2a)
-#(some other small ones as well, like basophils/mast cells)
-# principal hematopoietic markers (Cd3e, Adgre1, Ly-6c, Cd19, Cd68, H2-ab1)
-
-
-#BiocManager::install("SingleR")
-#BiocManager::install("celldex")
 
 library(celldex)
 library(SingleR)
 
-#mouse.ref <- celldex::MouseRNAseqData()
-#saveRDS(mouse.ref, "mouseref.rds")
+mouse.ref <- celldex::MouseRNAseqData()
+saveRDS(mouse.ref, "mouseref.rds")
 mouse.ref <- readRDS("/scratch/project_2005050/Rstats/mouseref.rds")
 
 sce <- as.SingleCellExperiment((DietSeurat(TERVA2_harmony)))
@@ -336,141 +288,150 @@ m_fine <- DimPlot(TERVA2_harmony, label = T , repel = T, label.size = 3) + NoLeg
 
 m_fine + m_main
 
-#### Rename unannotated clusters ####
+#### Differential gene expression between clusters ####
 
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "seurat_clusters")
-TERVA2_harmony <- RenameIdents(TERVA2_harmony, 
-                               "0" = "B cells", "1" = "Fibroblasts", "2" = "Macrophages", "3" = "Cd8+ Tcells", 
-                               "4" = "Cd4+ Tcells", "5" = "Endothelial cells", "6" = "Macrophages activated", "7" = "Intermediate Monocytes", 
-                               "8" = "Classical and non-classical Monocytes", "10" = "Pi16+ adventitial Fibroblasts", "11" = "Cd4+ Foxp3+ Tregs", 
-                               "12" = "Vascular smooth muscle cells", "13" = "Fibroblasts activated", "14" = "Cd8+ Ccl5+ Teffs", 
-                               "15" = "Innate lymphoid cells", "16" = "Lgals3+ Macrophages", 
-                               "17" = "Rpl-Rps+ cells", "18" = "Granulocytes", "19" = "Dividing cells",
-                               "20" = "Rgs5+ EC's", "21" = "Conventional Dendritic cells 1", "22" = "Natural killer cells", 
-                               "23" = "Conventional Dendritic cells 2", "24" = "Plasma cells", "25" = "Pi16+ adventitial Fibroblasts",
-                               "26" = "EC's with shear stress markers", "27" = "Mgp+ Fibroblasts", 
-                               "28" = "Hdc+ Cpa3+ MAST cells", "29" = "Mgp+ Fibroblasts", "30" = "Adipose tissue Mesothelial cells",
-                               "31" = "Endothelial cells", "32" = "Igf2+ Endothelial tip cells", "33" = "Mmp3+ Adipocytes",
-                               "34" = "Fibroblasts", "35" = "Granulocytes")
-
-nb.cols <- 31
-mycolors <- colorRampPalette(brewer.pal(8, "Accent"))(nb.cols)
-reannot <- DimPlot(TERVA2_harmony, label = T , repel = T, pt.size = 3, label.size = 9, cols = mycolors)
-reannot + 
-  labs(title = "Clustering of the integrated data") +
-  theme(plot.title = element_text(size=30, hjust= 0.5),
-        axis.title = element_text(size=20),
-        axis.text = element_text(size=20)) +
-  guides(col = guide_legend(ncol = 1)) + NoLegend()
-
-
-  
-
-saveRDS(TERVA2_harmony, "TERVA2_harmony_2.rds")
-TERVA2_harmony <- readRDS("/scratch/project_2005050/Rstats/TERVA2_harmony_2.rds")
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "seurat_clusters")
+TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "RNA_snn_res.0.7")
 TERVA2_harmony_allmarkers_wilcoxon <- FindAllMarkers(TERVA2_harmony, verbose = T, min.cells.group = 10)
 saveRDS(TERVA2_harmony_allmarkers_wilcoxon, "TERVA2_harmony_allmarkers_wilcoxon_reQC.rds")
+Cluster_markers <- readRDS("TERVA2_harmony_allmarkers_wilcoxon_reQC.rds")
 
+split <- split(TERVA2_harmony_allmarkers_wilcoxon, TERVA2_harmony_allmarkers_wilcoxon$cluster)
+list2env(split, envir = globalenv())
 
-#### LD vs PL analysis ####
+#### Rename clusters ####
 
-coldata <- as.data.frame(TERVA2_harmony@meta.data$Sample)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
+TERVA2_harmony <- RenameIdents(TERVA2_harmony, 
+                               "0" = "B cells", "1" = "Fibroblasts", "2" = "Cd8+ T cells", "3" = "M2 Macrophages", 
+                               "4" = "M1 Macrophages", "5" = "Cd4+ Lef1+ Tcf7+ Naive T cells", "6" = "Cd4+ Cxcr6+ T cells", "7" = "Fabp4+ Gpihbp1+ Endothelial cells EC2", 
+                               "8" = "Pi16+ Fibroblasts", "9" = "Intermediate monocytes", "10" = "Mgp+ Aebp1+ Activated fibroblasts", "11" = "Classical and non-classical monocytes", 
+                               "12" = "Vascular smooth muscle cells", "14" = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells", 
+                               "15" = "Lgals3+ Macrophages", "16" = "Mki67+ Top2a+ Dividing cells", 
+                               "17" = "s100a9+/a8+ Granulocytes", "18" = "Cytl1+ Clu+ Endothelial cells EC1", "19" = "Conventional Dendritic cells DC1",
+                               "20" = "Rgs5+ Endothelial cells", "21" = "Natural killer cells", "22" = "Conventional Dendritic cells DC2", 
+                               "23" = "Plasma cells", "24" = "Ccl8+ Fibroblasts", "25" = "Granulocytes",
+                               "26" = "Mesothelial cells", "27" = "Fabp4+ Gpihbp1+ Endothelial cells EC2", 
+                               "28" = "Depp1+ Endothelial cells")
 
-coldata <- mutate(coldata,
-                  Status = case_when(
-                    startsWith(TERVA2_harmony@meta.data$Sample, "LD") ~ "Late_disease",
-                    startsWith(TERVA2_harmony@meta.data$Sample, "PL") ~ "Prelesion"
-                  ))
-
-group_id <- coldata$Status
-TERVA2_harmony@meta.data$group_id <- as.factor(group_id)
-
-#Plot by group
-
-DimPlot(TERVA2_harmony, reduction = "umap", group.by = "group_id", label = T , repel = T, label.size = 3) + NoLegend()
-DimPlot(TERVA2_harmony, reduction = "umap", split.by = "group_id", label = T , repel = T, label.size = 3) + NoLegend()
-
-FeaturePlot(TERVA2_harmony, split.by = "group_id", features = "Rag1")
-FeaturePlot(TERVA2_harmony, split.by = "group_id", features = c("Icos", "Kit", "Il-r7"))
-
-#Find conserved markers for cells of interest between PL and LD (This is across tissues)
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "seurat_clusters") #When all clusters separately 
-B.markers <- FindConservedMarkers(TERVA2_harmony, ident.1 = c(0,25), grouping.var = "group_id", verbose = TRUE)
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "mouse.fine") #When mouse reference annotated
-B.mousemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "B cells", grouping.var = "group_id", verbose = TRUE)
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "seurat_clusters") #When all clusters separately 
-T.markers <- FindConservedMarkers(TERVA2_harmony, ident.1 = c(2,5,9,11,23,24), grouping.var = "group_id", verbose = TRUE)
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "mouse.fine") #When mouse reference annotated
-T.mousemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "T cells", grouping.var = "group_id", verbose = TRUE)
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "mouse.fine") #When mouse reference annotated
-Macrophage.mousemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "Macrophages", grouping.var = "group_id", verbose = TRUE)
-Macrophage_act.mousemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "Macrophages activated", grouping.var = "group_id", verbose = TRUE)
-
-
-
-#Find de genes between PL and LD (across tissues)
-#TERVA2_harmony <- subset(TERVA2_harmony, subset = seurat_clusters %in% c(0:9,11:50)) #Remove the CD79a + Cd3d pos cluster
-#TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "mouse.fine")
 TERVA2_harmony$celltype.group <- paste(Idents(TERVA2_harmony), TERVA2_harmony$group_id, sep = "_")
 TERVA2_harmony$celltype <- Idents(TERVA2_harmony)
 celltypes <- as.vector(unique(TERVA2_harmony$celltype))
 celltypes
-#[1] "Cd4+ Tcells"                           "Natural killer cells"                  "Cd8+ Tcells"                           "Cd8+ Ccl5+ Teffs"                     
-#[5] "Cd4+ Foxp3+ Tregs"                     "B cells"                               "Classical and non-classical Monocytes" "Lgals3+ Macrophages"                  
-#[9] "Plasma cells"                          "Dividing cells"                        "Vascular smooth muscle cells"          "Intermediate Monocytes"               
-#[13] "Macrophages activated"                 "Innate lymphoid cells"                 "Rpl-Rps+ cells"                        "Pi16+ adventitial Fibroblasts"        
-#[17] "Mgp+ Fibroblasts"                      "Macrophages"                           "Conventional Dendritic cells 2"        "Fibroblasts"                          
-#[21] "Granulocytes"                          "Conventional Dendritic cells 1"        "Hdc+ Cpa3+ MAST cells"                 "EC's with shear stress markers"       
-#[25] "Fibroblasts activated"                 "Rgs5+ EC's"                            "Adipose tissue Mesothelial cells"      "Endothelial cells"                    
-#[29] "Mmp3+ Adipocytes"                      "Igf2+ Endothelial tip cells"  
+#[1] "Cd4+ Lef1+ Tcf7+ Naive T cells"        "Natural killer cells"                 
+#[3] "Cd8+ T cells"                          "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells"   
+#[5] "B cells"                               "Intermediate monocytes"               
+#[7] "Lgals3+ Macrophages"                   "Plasma cells"                         
+#[9] "Mki67+ Top2a+ Dividing cells"          "Vascular smooth muscle cells"         
+#[11] "M1 Macrophages"                        "Cd4+ Cxcr6+ T cells"                  
+#[13] "Pi16+ Fibroblasts"                     "Fibroblasts"                          
+#[15] "M2 Macrophages"                        "Conventional Dendritic cells DC2"     
+#[17] "Classical and non-classical monocytes" "s100a9+/a8+ Granulocytes"             
+#[19] "Conventional Dendritic cells DC1"      "Granulocytes"                         
+#[21] "Cytl1+ Clu+ Endothelial cells EC1"     "Mgp+ Aebp1+ Activated fibroblasts"    
+#[23] "Rgs5+ Endothelial cells"               "Mesothelial cells"                    
+#[25] "Fabp4+ Gpihbp1+ Endothelial cells EC2" "Ccl8+ Fibroblasts"                    
+#[27] "Depp1+ Endothelial cells" 
 
-####  DE from the finely reannotated cell types DE between states ####
 Idents(TERVA2_harmony) <- "celltype"
-Allmarkers_macrophages_wilcoxon <- FindMarkers(TERVA2_harmony, ident.1 = "Lgals3+ Macrophages", ident.2 = c("Macrophages", "Macrophages activated"), verbose = T, min.cells.group = 30)
-saveRDS(TERVA2harmony_allmarkers_wilcoxon, "TERVA2harmony_allmarkers_Macrophages_wilcoxon_reclustered.rds")
+nb.cols <- 27
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+reannot <- DimPlot(TERVA2_harmony, pt.size = 1.2, cols = mycolors, order = T)
+reannot + 
+  labs(title = "Cell annotations of the integrated data") +
+  theme(plot.title = element_text(size=30, hjust= 0.5),
+        axis.title = element_text(size=20),
+        axis.text = element_text(size=20),
+        ) +
+  guides(col = guide_legend(ncol = 1))
 
+#The same as above but without the legend
+Idents(TERVA2_harmony) <- "celltype"
+reannot <- DimPlot(TERVA2_harmony, label = T, label.box = T, label.color = "darkgray", pt.size = 1.2, cols = mycolors, order = T) + NoLegend()
+reannot + 
+  labs(title = "Clustering of the integrated data") 
+
+Idents(TERVA2_harmony) <- "celltype"
+reannot2 <- DimPlot(TERVA2_harmony, split.by = "tissue_id", pt.size = 1.2, cols = mycolors, order = T) + NoLegend()
+reannot2 + 
+  labs(title = "Clustering of the integrated data") 
+
+#Visualization of some GOI's in specific cells
+Idents(TERVA2_harmony) <- "celltype"
+VlnPlot(TERVA2_harmony, features = c("Lgals3"), idents = c("Lgals3+ Macrophages","M1 Macrophages","M2 Macrophages", "Fabp4+ Gpihbp1+ Endothelial cells EC2", "Vascular smooth muscle cells", "Cytl1+ Clu+ Endothelial cells EC1"), split.by = "Sample", cols = c("darkorange", "magenta", "cyan4", "tomato", "turquoise2", "plum3", "slateblue2", "yellow")) # + theme(legend.position = 'none')
+Idents(TERVA2_harmony) <- "celltype.group"
+RidgePlot(TERVA2_harmony, features = c("Lgals3"), cols = mycolors, idents = c("Lgals3+ Macrophages_Late_disease", "Lgals3+ Macrophages_Prelesion","M1 Macrophages_Late_disease","M1 Macrophages_Prelesion", "M2 Macrophages_Late_disease", "M2 Macrophages_Prelesion", "Vascular smooth muscle cells_Late_disease", "Vascular smooth muscle cells_Prelesion", "Fabp4+ Gpihbp1+ Endothelial cells EC2_Late_disease", "Fabp4+ Gpihbp1+ Endothelial cells EC2_Prelesion", "Cytl1+ Clu+ Endothelial cells EC1_Late_disease", "Cytl1+ Clu+ Endothelial cells EC1_Prelesion"), sort = "increasing") + NoLegend()
+DoHeatmap(TERVA2_harmony, features = c("Lgals3"))
+
+#Plot by group
+
+diseasestates <- DimPlot(TERVA2_harmony, reduction = "umap", group.by = "group_id", pt.size = 1.2, label = T, label.box =  T, label.color = "gray", repel = T, cols = c("#009292", "#490092")) + NoLegend()
+diseasestates
+
+(reannot + diseasestates) / (reannot2)
+
+FeaturePlot(TERVA2_harmony, split.by = "group_id", features = c("Lgals3", "Rgs5", "Pi16", "Cd74", "Igkc"))
+
+#Find conserved markers for cells of interest between PL and LD (This is across tissues)
+
+TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "celltype") 
+B.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "B cells", grouping.var = "group_id", verbose = TRUE)
+T.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = c("Cd8+ T cells", "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells","Cd4+ Lef1+ Tcf7+ Naive T cells", "Natural killer cells", "Cd4+ Cxcr6+ T cells"), grouping.var = "group_id", verbose = TRUE)
+MacrophageM1.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "M1 Macrophages", grouping.var = "group_id", verbose = TRUE)
+MacrophageM2.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "M2 Macrophages", grouping.var = "group_id", verbose = TRUE)
+MacrophageLgals3.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "Lgals3+ Macrophages", grouping.var = "group_id", verbose = TRUE)
+
+#Find DE genes between PL and LD (across tissues)
+
+####  DE from the reannotated cell types DE between states ####
+
+#[1] "Cd4+ Lef1+ Tcf7+ Naive T cells"        "Natural killer cells"                 
+#[3] "Cd8+ T cells"                          "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells"   
+#[5] "B cells"                               "Intermediate monocytes"               
+#[7] "Lgals3+ Macrophages"                   "Plasma cells"                         
+#[9] "Mki67+ Top2a+ Dividing cells"          "Vascular smooth muscle cells"         
+#[11] "M1 Macrophages"                        "Cd4+ Cxcr6+ T cells"                  
+#[13] "Pi16+ Fibroblasts"                     "Fibroblasts"                          
+#[15] "M2 Macrophages"                        "Conventional Dendritic cells DC2"     
+#[17] "Classical and non-classical monocytes" "s100a9+/a8+ Granulocytes"             
+#[19] "Conventional Dendritic cells DC1"      "Granulocytes"                         
+#[21] "Cytl1+ Clu+ Endothelial cells EC1"     "Mgp+ Aebp1+ Activated fibroblasts"    
+#[23] "Rgs5+ Endothelial cells"               "Mesothelial cells"                    
+#[25] "Fabp4+ Gpihbp1+ Endothelial cells EC2" "Ccl8+ Fibroblasts"                    
+#[27] "Depp1+ Endothelial cells" 
 
 Idents(TERVA2_harmony) <- "celltype.group"
-Cd4posT <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd4+ Tcells_Late_disease", ident.2 = "Cd4+ Tcells_Prelesion", verbose = FALSE)
+Cd4Lef1Tcf7NaiveTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd4+ Lef1+ Tcf7+ Naive T cells_Late_disease", ident.2 = "Cd4+ Lef1+ Tcf7+ Naive T cells_Prelesion", verbose = FALSE)
 NK <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Natural killer cells_Late_disease", ident.2 = "Natural killer cells_Prelesion", verbose = FALSE)
-Cd8posT <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ Tcells_Late_disease", ident.2 = "Cd8+ Tcells_Prelesion", verbose = FALSE)
-Cd8posCcl5posTeff <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ Ccl5+ Teffs_Late_disease", ident.2 = "Cd8+ Ccl5+ Teffs_Prelesion", verbose = FALSE)
-Cd4Foposxp3posTreg <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd4+ Foxp3+ Tregs_Late_disease", ident.2 = "Cd4+ Foxp3+ Tregs_Prelesion", verbose = FALSE)
-Bcells_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
-Macrophagesact_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Macrophages activated_Late_disease", ident.2 = "Macrophages activated_Prelesion", verbose = FALSE)
-Plasmacells_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Plasma cells_Late_disease", ident.2 = "Plasma cells_Prelesion", verbose = FALSE)
-Dividing <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Dividing cells_Late_disease", ident.2 = "Dividing cells_Prelesion", verbose = FALSE)
-Fibro_Pi16 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pi16+ adventitial Fibroblasts_Late_disease", ident.2 = "Pi16+ adventitial Fibroblasts_Prelesion", verbose = FALSE)
-Fibroblasts_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fibroblasts_Late_disease", ident.2 = "Fibroblasts_Prelesion", verbose = FALSE)
-Fibro_Mgp_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mgp+ Fibroblasts_Late_disease", ident.2 = "Mgp+ Fibroblasts_Prelesion", verbose = FALSE)
-Fibroact_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fibroblasts activated_Late_disease", ident.2 = "Fibroblasts activated_Prelesion", verbose = FALSE)
-Macrophages_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Macrophages_Late_disease", ident.2 = "Macrophages_Prelesion", verbose = FALSE)
-Macrophages_Lgals3_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lgals3+ Macrophages_Late_disease", ident.2 = "Lgals3+ Macrophages_Prelesion", verbose = FALSE)
+Cd8posT <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ T cells_Late_disease", ident.2 = "Cd8+ T cells_Prelesion", verbose = FALSE)
+Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Late_disease", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Prelesion", verbose = FALSE)
+Cd4Cxcr6Tcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd4+ Cxcr6+ T cells_Late_disease", ident.2 = "Cd4+ Cxcr6+ T cells_Prelesion", verbose = FALSE)
+Bcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
+M1Macrophages <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "M1 Macrophages_Late_disease", ident.2 = "M1 Macrophages_Prelesion", verbose = FALSE)
+M2Macrophages <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "M2 Macrophages_Late_disease", ident.2 = "M2 Macrophages_Prelesion", verbose = FALSE)
+Macrophages_Lgals3 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lgals3+ Macrophages_Late_disease", ident.2 = "Lgals3+ Macrophages_Prelesion", verbose = FALSE)
+Plasmacells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Plasma cells_Late_disease", ident.2 = "Plasma cells_Prelesion", verbose = FALSE)
+Mki67Top2aDividingcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mki67+ Top2a+ Dividing cells_Late_disease", ident.2 = "Mki67+ Top2a+ Dividing cells_Prelesion", verbose = FALSE)
+Fibro_Pi16 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pi16+ Fibroblasts_Late_disease", ident.2 = "Pi16+ Fibroblasts_Prelesion", verbose = FALSE)
+Fibroblasts <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fibroblasts_Late_disease", ident.2 = "Fibroblasts_Prelesion", verbose = FALSE)
+Fibro_Mgp <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Late_disease", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Prelesion", verbose = FALSE)
+Fibro_Ccl8 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Ccl8+ Fibroblasts_Late_disease", ident.2 = "Ccl8+ Fibroblasts_Prelesion", verbose = FALSE)
 Int_monocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Intermediate monocytes_Late_disease", ident.2 = "Intermediate monocytes_Prelesion", verbose = FALSE)
-ILC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Innate lymphoid cells_Late_disease", ident.2 = "Innate lymphoid cells_Prelesion", verbose = FALSE)
-Conv_DC2 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells 2_Late_disease", ident.2 = "Conventional Dendritic cells 2_Prelesion", verbose = FALSE)
-Class_monocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Classical and non-classical Monocytes_Late_disease", ident.2 = "Classical and non-classical Monocytes_Prelesion", verbose = FALSE)
-Granulocytes_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
-Conv_DC1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells 1_Late_disease", ident.2 = "Conventional Dendritic cells 1_Prelesion", verbose = FALSE)
-Endothelialcells_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Endothelial cells_Late_disease", ident.2 = "Endothelial cells_Prelesion", verbose = FALSE)
-EC_rgs5_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Rgs5+ EC's_Late_disease", ident.2 = "Rgs5+ EC's_Prelesion", verbose = FALSE)
-VSMCs_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vascular smooth muscle cells_Late_disease", ident.2 = "Vascular smooth muscle cells_Prelesion", verbose = FALSE)
-MAST_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Hdc+ Cpa3+ MAST cells_Late_disease", ident.2 = "Hdc+ Cpa3+ MAST cells_Prelesion", verbose = FALSE)
-ECtip_Igf2_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Igf2+ Endothelial tip cells_Late_disease", ident.2 = "Igf2+ Endothelial tip cells_Prelesion", verbose = FALSE)
-Mmp3_Adipocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mmp3+ Adipocytes_Late_disease", ident.2 = "Mmp3+ Adipocytes_Prelesion", verbose = FALSE)
-Granulocytes_reannot <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
+Conv_DC1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Late_disease", ident.2 = "Conventional Dendritic cells DC1_Prelesion", verbose = FALSE)
+Conv_DC2 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells DC2_Late_disease", ident.2 = "Conventional Dendritic cells DC2_Prelesion", verbose = FALSE)
+Class_monocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Classical and non-classical monocytes_Late_disease", ident.2 = "Classical and non-classical monocytes_Prelesion", verbose = FALSE)
+Granulocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
+s100a9_a8Granulocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Late_disease", ident.2 = "s100a9+/a8+ Granulocytes_Prelesion", verbose = FALSE)
+Cytl1Clu_EC1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cytl1+ Clu+ Endothelial cells EC1_Late_disease", ident.2 = "Cytl1+ Clu+ Endothelial cells EC1_Prelesion", verbose = FALSE)
+Fabp4Gpihbp1_EC2 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fabp4+ Gpihbp1+ Endothelial cells EC2_Late_disease", ident.2 = "Fabp4+ Gpihbp1+ Endothelial cells EC2_Prelesion", verbose = FALSE)
+Rgs5_EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Late_disease", ident.2 = "Rgs5+ Endothelial cells_Prelesion", verbose = FALSE)
+VSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vascular smooth muscle cells_Late_disease", ident.2 = "Vascular smooth muscle cells_Prelesion", verbose = FALSE)
+Mesothelialcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mesothelial cells_Late_disease", ident.2 = "Mesothelial cells_Prelesion", verbose = FALSE)
+Depp1_EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Depp1+ Endothelial cells_Late_disease", ident.2 = "Depp1+ Endothelial cells_Prelesion", verbose = FALSE)
 
 
-sctlist <- c("Cd4posT", "Cd8posT", "NK", "Cd8posCcl5posTeff", "Cd4Foposxp3posTreg", "Bcells_reannot", "Macrophagesact_reannot", "Plasmacells_reannot", "Dividing", "Fibro_Pi16", 
-             "Fibroblasts_reannot", "Fibro_Mgp_reannot", "Fibroact_reannot", "Macrophages_reannot", "Macrophages_Lgals3_reannot", "Int_monocytes", "ILC", "Conv_DC2", "Class_monocytes", "Granulocytes_reannot", "Conv_DC1", 
-             "Endothelialcells_reannot", "EC_rgs5_reannot", "VSMCs_reannot", "MAST_reannot")
+sctlist <- c("Cd4Lef1Tcf7NaiveTcells", "Cd8posT", "NK", "Cd8Ccl5Nkg7CytotoxicTcells", "Cd4Cxcr6Tcells", "Bcells", "M1Macrophages", "M2Macrophages", "Macrophages_Lgals3", "Plasmacells", 
+             "Mki67Top2aDividingcells", "Fibro_Pi16", "Fibroblasts", "Fibro_Mgp", "Fibro_Ccl8", "Int_monocytes", "Conv_DC1", "Conv_DC2", "Class_monocytes", "Granulocytes", "s100a9_a8Granulocytes", 
+             "Cytl1Clu_EC1", "Fabp4Gpihbp1_EC2", "VSMCs", "Mesothelialcells", "Depp1_EC")
 
 for(i in 1:length(sctlist)) {                
   write.csv2(get(sctlist[i]),
@@ -480,8 +441,209 @@ for(i in 1:length(sctlist)) {
              row.names = TRUE)
 }
 
+# Visualization of DE genes between PL and LD (across tissues)
+
+ev1 <- EnhancedVolcano(M1Macrophages,
+                lab = rownames(M1Macrophages),
+                x = 'avg_log2FC',
+                y = 'p_val_adj',
+                title = 'Late disease vs Prelesion in M1 Macrophages',
+                pCutoff = 1e-2,
+                FCcutoff = 0.4,
+                pointSize = 3.0,
+                col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                labSize = 6.0,
+                titleLabSize = 15.0)
+
+ev2 <- EnhancedVolcano(M2Macrophages,
+                lab = rownames(M2Macrophages),
+                x = 'avg_log2FC',
+                y = 'p_val_adj',
+                title = 'Late disease vs Prelesion in M2 Macrophages',
+                pCutoff = 1e-2,
+                FCcutoff = 0.4,
+                pointSize = 3.0,
+                col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                labSize = 6.0,
+                titleLabSize = 15.0)
+
+ev3 <- EnhancedVolcano(Macrophages_Lgals3 ,
+                lab = rownames(Macrophages_Lgals3),
+                x = 'avg_log2FC',
+                y = 'p_val_adj',
+                title = 'Late disease vs Prelesion in Lgals3+ Macrophages',
+                pCutoff = 1e-2,
+                FCcutoff = 0.4,
+                pointSize = 3.0,
+                col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                labSize = 6.0,
+                titleLabSize = 15.0)
+
+ev1 + ev2 + ev3
 
 
+ev4 <- EnhancedVolcano(Cd4Lef1Tcf7NaiveTcells,
+                       lab = rownames(Cd4Lef1Tcf7NaiveTcells),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'Late disease vs Prelesion in Cd4+ Lef1+ Tcf7+ Naive T cells',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev5 <- EnhancedVolcano(Cd4Cxcr6Tcells ,
+                       lab = rownames(Cd4Cxcr6Tcells ),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'Late disease vs Prelesion in Cd4+ Cxcr6+ T cells ',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev6 <- EnhancedVolcano(Cd8posT,
+                       lab = rownames(Cd8posT),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'Late disease vs Prelesion in Cd8+ T cells',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev7 <- EnhancedVolcano(Cd8Ccl5Nkg7CytotoxicTcells,
+                       lab = rownames(Cd8Ccl5Nkg7CytotoxicTcells),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'Late disease vs Prelesion in Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+(ev4 + ev5) / (ev6 + ev7)
+
+#First clean some genes that are usual cause of technical artefacts.
+
+Fibro_Ccl8$gene <- rownames(Fibro_Ccl8)
+Fibro_Ccl8 <- filter(Fibro_Ccl8, !str_detect(gene, "Gm42418")) %>%
+  filter(!str_detect(gene, "AY036118")) %>%
+  filter(!str_detect(gene, "Gm8797"))
+
+Fibro_Mgp$gene <- rownames(Fibro_Mgp)
+Fibro_Mgp <- filter(Fibro_Mgp, !str_detect(gene, "Gm42418")) %>%
+  filter(!str_detect(gene, "AY036118")) %>%
+  filter(!str_detect(gene, "Gm8797"))
+
+Fibro_Pi16$gene <- rownames(Fibro_Pi16)
+Fibro_Pi16 <- filter(Fibro_Pi16, !str_detect(gene, "Gm42418")) %>%
+  filter(!str_detect(gene, "AY036118")) %>%
+  filter(!str_detect(gene, "Gm8797"))
+
+ev8 <- EnhancedVolcano(Fibroblasts,
+                       lab = rownames(Fibroblasts),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'Late disease vs Prelesion in Fibroblasts',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev9 <- EnhancedVolcano(Fibro_Ccl8,
+                       lab = rownames(Fibro_Ccl8),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'Late disease vs Prelesion in Ccl8+ Fibroblasts',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev10 <- EnhancedVolcano(Fibro_Mgp,
+                       lab = rownames(Fibro_Mgp),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'Late disease vs Prelesion in Mgp+ Fibroblasts',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev11 <- EnhancedVolcano(Fibro_Pi16,
+                       lab = rownames(Fibro_Pi16),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'Late disease vs Prelesion in Pi16+ Fibroblasts',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+(ev8 + ev9) / (ev10 + ev11)
+
+
+
+
+#### GSEA analysis with clusterProfiler ####
+
+#Set the genes in analysis as the background. 
+background <- rownames(TERVA2_harmony@assays$RNA@counts)
+
+#Cut off genes which have a adjusted p-value bigger than 0.05 
+cutoff_p <- function(x) { #function to do the pruning
+  genes <- subset(x, p_val_adj < 0.05)
+  return(genes)
+}
+
+M1_macros <- cutoff_p(M1Macrophages)
+
+# use bitr to obtain Entrez IDs
+
+gene <- rownames(M1_macros)
+gene.go <- bitr(gene, fromType = "SYMBOL",
+                toType = "ENTREZID",
+                OrgDb = org.Mm.eg.db)
+
+eGO <- enrichGO(gene          = gene.go$ENTREZID,
+                OrgDb         = org.Mm.eg.db,
+                universe = names(background),
+                pAdjustMethod = "fdr",
+                pvalueCutoff  = 0.01)
+head(summary(eGO))
+dotplot(eGO, showCategory=30)
+
+#THIS NEED TO BE FIXED KEGG NAMES NOT WORKING NOW
+R.utils::setOption("clusterProfiler.download.method","auto")
+gene.go$"ncbi-geneid" <- gene.go$ENTREZID
+gene.kegg <- bitr_kegg(gene.go, fromType = "ncbi-geneid",
+                toType = "kegg", organism = "mouse")
+
+eKEGG <- enrichKEGG(gene = gene.kegg,
+                universe = names(background),
+                keyType = "kegg",
+                organism = "mouse",
+                pAdjustMethod = "fdr",
+                pvalueCutoff  = 0.01)
+head(summary(eKEGG))
+dotplot(eKEGG, showCategory=30)
 
 
 #### Tissue specific analyses ####
@@ -500,6 +662,9 @@ tissue_id <- tissuedata$Tissue
 TERVA2_harmony@meta.data$tissue_id <- as.factor(tissue_id)
 
 TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "tissue_id") #When all clusters separately 
+
+
+
 
 AO <- subset(TERVA2_harmony, idents = "Aorta")
 PVAT <- subset(TERVA2_harmony, idents = "PVAT")
@@ -1389,107 +1554,5 @@ write.csv(Top10_Bcellmarkersbycl_harmony, "/scratch/project_2005050/Rstats/Top10
 ### Save whole data as H5 object ####
 
 SaveH5Seurat(object = TERVA2_harmony, overwrite = T, verbose = T)
-
-
-#### TCR - BCR analysis ####
-#There were quite large differences in the successfulness of the TCR/BCR libraries between samples. This should be accounted for when drawing any inferences from the data.
-
-#LD eWAT: two errors for TCR/BCR: Low fraction of reads mapped to any VDJ gene (18.80 % in TCR, 28.45 % in BCR, ideal should be > 50 %), and low fraction of valid barcodes in TCR (74.83 %, ideal > 85 %)
-#PL eWAT: low fraction valid barcodes in TCR (exactly 85.00 %), and low fraction of reads mapped to any vdj gene (48.32 %, ideal > 50 %)
-
-
-#BiocManager::install("scRepertoire")
-#devtools::install_github("rnabioco/djvdj")
-
-library(djvdj)
-library(scRepertoire)
-
-Idents(TERVA2_harmony) <- "celltype"
-TERVA2_harmony_small <- subset(TERVA2_harmony, idents = c("29","30","31", "32", "33",
-                                                          "34", "35"), invert = TRUE)
-
-TERVA2_harmony_small <- subset(TERVA2_harmony, idents = c("29_Late_disease", "29_Prelesion","30_Late_disease", "30_Prelesion","31_Late_disease", 
-                                                          "31_Prelesion", "32_Late_disease", "32_Prelesion", "33_Late_disease",
-                                                          "34_Late_disease", "35_Late_disease"), invert = TRUE)
-
-clonotype_id <- TERVA2_harmony_small@meta.data$TCR_clonotype_id
-TERVA2_harmony_small@meta.data$clonotype_id <- clonotype_id
-
-chains <- TERVA2_harmony_small@meta.data$TCR_chains
-TERVA2_harmony_small@meta.data$chains <- chains
-
-
-TERVA2_harmony_small <- calc_diversity(
-  input       = TERVA2_harmony_small,                       # Seurat object
-  cluster_col = "celltype.group",
-  clonotype_col = "clonotype_id"
-)
-
-TCRusage_simpson <- plot_diversity(
-  input       = TERVA2_harmony_small,                       # Seurat object
-  cluster_col = "celltype.group",
-  clonotype_col = "clonotype_id"  
-) +
-  ggtitle("TCR diversity (Simpson)") +
-  theme(axis.text.x=element_text(angle=45, hjust=1))
-
-
-
-TERVA2_harmony_small <- calc_abundance(
-  input = TERVA2_harmony_small,
-  cluster_col = "celltype.group",
-  clonotype_col = "TCR_clonotype_id",
-  prefix = "TCR_"
-)
-
-
-
-TCRsimilarity <- calc_similarity(TERVA2_harmony_small,
-                                 cluster_col = "Sample",
-                                 method = abdiv::jaccard,
-                                 clonotype_col = "clonotype_id",
-                                 prefix = "TCR_",
-                                 return_mat = TRUE)
-
-plot_similarity(
-  TERVA2_harmony_small,
-  cluster_col = "Sample"
-  ) 
-
-
-
-chains <- TERVA2_harmony_small@meta.data$BCR_chains
-TERVA2_harmony_small@meta.data$chains <- chains
-
-calc_gene_usage(
-  input       = TERVA2_harmony_small,
-  gene_cols   = c("BCR_v_gene","BCR_j_gene"),                   # Column containing genes
-  cluster_col = "Sample",                    # Column containing cell clusters to compare
-  chain       = "IGH",                      # Chain to calculate gene usage for
-  chain_col   = "chains"                    # Column containing chains
-)
-
-
-plot_gene_usage(input       = TERVA2_harmony_small,
-                gene_cols   = c("BCR_v_gene","BCR_j_gene"),                   # Column(s) containing genes
-                type        = "bar",
-                cluster_col = "celltype.group",                   # Type of plot, 'heatmap' or 'bar'
-                chain       = "IGK",                      # Chain to plot
-                n_genes     = 20,                         # The number of top genes to plot
-                plot_colors = "cyan4"
-)
-
-
-ggs <- plot_gene_usage(
-  input       = TERVA2_harmony_small,
-  gene_cols   = c("BCR_v_gene","BCR_j_gene"),      # Column(s) containing genes
-  cluster_col = "Sample",                    # Column containing cell clusters to compare
-  chain       = "IGH",                      # Chain to plot
-  plot_colors = "cyan4",
-  n_genes     = 20
-)
-
-plot_grid(plotlist = ggs)
-
 
 
