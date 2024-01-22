@@ -1,7 +1,7 @@
 #### TERVA2 data integration with harmony ####
 setwd("/scratch/project_2005050/Rstats")
 .libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1/", .libPaths()))
-pacman::p_load(SeuratDisk, Seurat, tidyverse, patchwork, cowplot, viridis, gridExtra, RColorBrewer, factoextra, clustree, harmony, colorBlindness, EnhancedVolcano, clusterProfiler, biomaRt, org.Mm.eg.db)
+pacman::p_load(tidyverse, patchwork, cowplot, viridis, gridExtra, RColorBrewer, factoextra, clustree, harmony, colorBlindness, EnhancedVolcano)
 
 
 #devtools::install_github('satijalab/seurat-data')
@@ -11,58 +11,58 @@ pacman::p_load(SeuratDisk, Seurat, tidyverse, patchwork, cowplot, viridis, gridE
 #  install.packages("remotes")
 #}
 #remotes::install_github("mojaveazure/seurat-disk")
-
 #BiocManager::install("clusterProfiler")
-
 #BiocManager::install("org.Mm.eg.db")
 
 #### Load in H5 data ####
+library(SeuratDisk, lib.loc = "/appl/soft/math/r-env/421/421-rpackages")
+library(Seurat, lib.loc = "/appl/soft/math/r-env/421/421-rpackages") #v4.1.1 (SeuratObject v4.1.0)
+OBAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDAOafterQC2.h5Seurat") 
+NOBAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLAOafterQC2.h5Seurat") 
+OBeWAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/LD_eWATafterQC.h5Seurat")
+NOBeWAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLeWATafterQC2.h5Seurat") 
+OBPVAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDPVATafterQC.h5Seurat")
+NOBPVAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLPVATafterQC2.h5Seurat")
+OBSpleen <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDSpleenafterQC.h5Seurat")
+NOBSpleen <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLSpleenafterQC.h5Seurat")
 
-LDAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDAOafterQC2.h5Seurat") 
-PLAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLAOafterQC2.h5Seurat") 
-LDeWAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/LD_eWATafterQC.h5Seurat")
-PLeWAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLeWATafterQC2.h5Seurat") 
-LDPVAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDPVATafterQC.h5Seurat")
-PLPVAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLPVATafterQC2.h5Seurat")
-LDSpleen <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDSpleenafterQC.h5Seurat")
-PLSpleen <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLSpleenafterQC.h5Seurat")
+New_idents <- rep("OBAO", times = 3048)
+OBAO@meta.data$Sample <- as.factor(New_idents)
+New_idents <- rep("NOBAO", times = 7661)
+NOBAO@meta.data$Sample <- as.factor(New_idents)
 
-New_idents <- rep("LDAO", times = 3048)
-LDAO@meta.data$Sample <- as.factor(New_idents)
-New_idents <- rep("PLAO", times = 7661)
-PLAO@meta.data$Sample <- as.factor(New_idents)
+New_idents <- rep("OBeWAT", times = 8076)
+OBeWAT@meta.data$Sample <- as.factor(New_idents)
+New_idents <- rep("NOBeWAT", times = 6420)
+NOBeWAT@meta.data$Sample <- as.factor(New_idents)
 
-New_idents <- rep("LDeWAT", times = 8076)
-LDeWAT@meta.data$Sample <- as.factor(New_idents)
-New_idents <- rep("PLeWAT", times = 6420)
-PLeWAT@meta.data$Sample <- as.factor(New_idents)
+New_idents <- rep("OBPVAT", times = 7396)
+OBPVAT@meta.data$Sample <- as.factor(New_idents)
+New_idents <- rep("NOBPVAT", times = 5396)
+NOBPVAT@meta.data$Sample <- as.factor(New_idents)
 
-New_idents <- rep("LDPVAT", times = 7396)
-LDPVAT@meta.data$Sample <- as.factor(New_idents)
-New_idents <- rep("PLPVAT", times = 5396)
-PLPVAT@meta.data$Sample <- as.factor(New_idents)
-
-New_idents <- rep("LDSpleen", times = 4234)
-LDSpleen@meta.data$Sample <- as.factor(New_idents)
-New_idents <- rep("PLSpleen", times = 5264)
-PLSpleen@meta.data$Sample <- as.factor(New_idents)
+New_idents <- rep("OBSpleen", times = 4234)
+OBSpleen@meta.data$Sample <- as.factor(New_idents)
+New_idents <- rep("NOBSpleen", times = 5264)
+NOBSpleen@meta.data$Sample <- as.factor(New_idents)
 
 #### Merge the separate data sets ####
 # merge.data=T 
-TERVA2 <-  merge(LDAO, y = c(PLAO, LDeWAT, PLeWAT, LDPVAT, PLPVAT, LDSpleen, PLSpleen), add.cell.ids = c("LDAO", "PLAO", "LDeWAT", "PLeWAT", "LDPVAT", "PLPVAT", "LDSpleen", "PLSpleen"), project = "TERVA2", merge.data = T)
+TERVA2 <-  merge(OBAO, y = c(NOBAO, OBeWAT, NOBeWAT, OBPVAT, NOBPVAT, OBSpleen, NOBSpleen), add.cell.ids = c("OBAO", "NOBAO", "OBeWAT", "NOBeWAT", "OBPVAT", "NOBPVAT", "OBSpleen", "NOBSpleen"), project = "TERVA2", merge.data = T)
 
 TERVA2
 
 table(TERVA2$Sample)
-#LDAO   LDeWAT   LDPVAT LDSpleen     PLAO   PLeWAT   PLPVAT PLSpleen 
-#3048     8076     7396     4234     7661     6420     5396     5264 
+
+#NOBAO   NOBPVAT NOBSpleen   NOBeWAT      OBAO    OBPVAT  OBSpleen    OBeWAT 
+#7661      5396      5264      6420      3048      7396      4234      8076 
 
 #### Normalize, scale etc. RNA assay ####
 # See https://github.com/immunogenomics/harmony/issues/41 for why I decided to use NormalizeData instead of SCTransform.
 # See https://portals.broadinstitute.org/harmony/SeuratV3.html. Before running Harmony, make a Seurat object and following the standard pipeline through PCA.
 #IMPORTANT DIFFERENCE: In the Seurat integration tutorial, you need to define a Seurat object for each dataset. With Harmony integration, create only one Seurat object with all cells.
 
-remove("LDAO","LDeWAT","PLeWAT","LDSpleen", "PLAO", "LDPVAT", "PLPVAT", "PLSpleen", "New_idents")
+remove("OBAO","OBeWAT","NOBeWAT","OBSpleen", "NOBAO", "OBPVAT", "NOBPVAT", "NOBSpleen", "New_idents")
 
 # Remove some genes that commonly cause technical noise
 
@@ -139,12 +139,12 @@ for(i in 1:length(ADTnames)){ #Print and save (137) ADT images to a specific fol
 
 #### Clustree ####
 
-resolution.range <- seq(from = 0, to = 1, by = 0.1)
+resolution.range <- seq(from = 0, to = 1.5, by = 0.1)
 TERVA2_harmony <- FindClusters(TERVA2_harmony, resolution = resolution.range, random.seed = 42)
 
 plot_cls1 <- clustree(TERVA2_harmony)
 plot_cls1 +
-  labs(title = "Cluster tree with resolutions from 0 to 1")
+  labs(title = "Cluster tree with resolutions from 0 to 1.5")
 
 #### Check how everything looks at this point, some basic plots ####
 
@@ -172,481 +172,157 @@ mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
 TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.8")
 clbycl_harmony_0.8 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
   labs(title = "Clustering with resolution 0.8")
-nb.cols <- 39
+nb.cols <- 40
 mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
 TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.9")
 clbycl_harmony_0.9 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
   labs(title = "Clustering with resolution 0.9")
+nb.cols <- 41
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.1")
+clbycl_harmony_1 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 1")
+nb.cols <- 44
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.1.1")
+clbycl_harmony_1.1 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 1.1")
+nb.cols <- 48
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.1.2")
+clbycl_harmony_1.2 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 1.2")
+nb.cols <- 49
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.1.3")
+clbycl_harmony_1.3 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors) +
+  labs(title = "Clustering with resolution 1.3")
 
-(clbycl_harmony_0.5 + clbycl_harmony_0.6) / (clbycl_harmony_0.7 + clbycl_harmony_0.8 + clbycl_harmony_0.9)
-clbycl_harmony_0.6 + clbycl_harmony_0.7 + clbycl_harmony_0.8
+(clbycl_harmony_0.5 + clbycl_harmony_0.6 + clbycl_harmony_0.7) / (clbycl_harmony_0.8 + clbycl_harmony_0.9 + clbycl_harmony_1) / (clbycl_harmony_1.1 + clbycl_harmony_1.2 + clbycl_harmony_1.3) 
 
-clbysample_harmony + clbycl_harmony_0.7
+clbysample_harmony + clbycl_harmony_1
 
-# Feature plots of some specific markers
+# Feature plots of B and T cell markers
 
-Fcellannot <- FeaturePlot(TERVA2_harmony, features= c("Myh11", "Nkg7", "Rora", "Dcn", "Vcam1", "Rgs5", "Cd34", "Upk3b", "Pecam1", "Cd79a", "Cd3d", "Cd68", "Spp1", "S100a8", "S100a9", "Top2a")) 
-TB <- FeaturePlot(TERVA2_harmony, features= c("Cd79a", "Cd3d"))
-Fcellannot
+TB <- FeaturePlot(TERVA2_harmony, features= c("Cd79a", "Cd19", "Cd3d", "Cd3e", "Cd3g"))
 TB
 
-nb.cols <- 33
+TBcells <- WhichCells(TERVA2_harmony, expression = Cd79a > 0  &  Cd19 > 0 & Cd3d > 0 & Cd3e > 0 & Cd3g > 0)
+DimPlot(TERVA2_harmony, cells.highlight = TBcells, order = T)
+length(TBcells) / length(TERVA2_harmony$RNA_snn_res.1) * 100 #2.72 % of all cells
+TBsub <- subset(TERVA2_harmony, subset = RNA_snn_res.1 == "12")
+length(TBcells) / length(TBsub$nCount_RNA) * 100 # 83.09 % of cluster 12
+
+DefaultAssay(TERVA2_harmony) <- "ADT"
+TBsub <- subset(TERVA2_harmony, subset = RNA_snn_res.1 == "12")
+TBcells <- WhichCells(TBsub, expression = CD19 > 0 & CD3 > 0)
+length(TBcells) / length(TBsub$nCount_ADT) * 100 # 88.75 % of cluster 12
+
+DefaultAssay(TERVA2_harmony) <- "RNA"
+TB_avgexpr <- as.data.frame(AverageExpression(TERVA2_harmony, assays = "RNA", features= c("Cd79a", "Cd19", "Cd3d", "Cd3e", "Cd3g", "Cd8a", "Cd8b1", "Cd4", "Tcf7"), return.seurat = FALSE, slot = "data"))
+TB_avgexpr <- TB_avgexpr %>% dplyr::select(RNA.0, RNA.3, RNA.5, RNA.12, RNA.20, RNA.22)
+VlnPlot(TERVA2_harmony, slot = "counts", idents = c("0", "3", "5", "12", "20", "22"), features= c("Cd79a", "Cd19", "Cd3d", "Cd3e", "Cd3g", "Cd8a", "Cd8b1", "Cd4", "Tcf7"), cols = c("goldenrod","green","blue", "gold", "purple", "orange"))
+VlnPlot(TERVA2_harmony, assay = "ADT", slot = "counts", idents = c("0", "3", "5", "12", "20", "22"), features= c("CD19", "CD3", "TCRbetachain", "TCRgamma-delta", "TCRVgamma1.1-Cr4", "TCRVgamma2", "TCRVgamma3","TCRVbeta8.1-8.2","TCRVbeta5.1-5.2", "TCRValpha2", "TCRValpha8.3-cloneB21.14", "TCRValpha8.3-cloneKT50", "TCRValpha11.1-11.2", "TCRgammadelta"), cols = c("goldenrod","green","blue", "gold", "purple", "orange"))
+
+# Create a Violin plot and UMAP visualization of clusters with a specific resolution (1).
+
+nb.cols <- 41
 mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
-clbycl_harmony_0.7 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, label.box = T, label.color = "white") +
-  labs(title = "Clustering with resolution 0.7")
-gene_counts <- VlnPlot(TERVA2_harmony, features = "nFeature_RNA", group.by = "RNA_snn_res.0.7", cols = mycolors)
-gene_counts + clbycl_harmony_0.7
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.1")
+clbycl_harmony_1 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, label.box = T, label.color = "white") +
+  labs(title = "Clustering with resolution 1")
+gene_counts <- VlnPlot(TERVA2_harmony, features = "nFeature_RNA", group.by = "RNA_snn_res.1", cols = mycolors)
+gene_counts + clbycl_harmony_1
 
 # Remove the CD79a and Cd3d positive cluster. After removing this, the cell numbers per sample drop, especially in the aorta samples.
-TERVA2_harmony <- subset(TERVA2_harmony, subset = RNA_snn_res.0.7 %in% c(0:7,9:32)) #Remove cluster 9 that's CD79a and Cd3d positive and might bias subsequent workflows
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
-clbycl_harmony_0.7 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, label.box = T, label.color = "white") +
-  labs(title = "Clustering with resolution 0.7 after removing Cd79a/Cd3d double-positive cluster")
-clbycl_harmony_0.7
+TERVA2_harmony <- subset(TERVA2_harmony, subset = RNA_snn_res.1 %in% c(0:11,13:40)) #Remove cluster 9 that's CD79a and Cd3d positive and might bias subsequent workflows
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.1")
+clbycl_harmony_1 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, label.box = T, label.color = "white") +
+  labs(title = "Clustering with resolution 1 after removing Cd79a/Cd3d double-positive cluster")
+clbycl_harmony_1
 
+Fcellannot <- FeaturePlot(TERVA2_harmony, features= c("Myh11", "Nkg7", "Rora", "Dcn", "Vcam1", "Rgs5", "Cd34", "Upk3b", "Pecam1", "Cd79a", "Cd3d", "Cd68", "Spp1", "S100a8", "S100a9", "Top2a")) 
 Fadip <- FeaturePlot(TERVA2_harmony, features= c("Adipoq", "Pdgfra", "Ces1f", "Btc", "Apoe", "Cacna1a", "Prune2", "Mt2", "Tcf21"))
 Fangio <- FeaturePlot(TERVA2_harmony, features= c("Cdh5", "Sdpr", "Egfl7", "Ptprb", "Ecscr", "Cldn5", "Icam2", "Slc9a3r2", "Myh11", "Cnn1", "Vcam1", "Cd36"))
-CD4_CD8 <- FeaturePlot(TERVA2_harmony, order = T, features= c("Cd8a", "CD8a", "Ccl5", "Cd4", "CD4", "Foxp3", "Icos", "Kit", "Il23r"))
+CD4_CD8 <- FeaturePlot(TERVA2_harmony, order = T, features= c("Cd8a", "Cd8b1", "Cd4", "Ccl5", "Foxp3","Vps37b", "Ramp3", "Tcf7", "Rag1"))
+ILC <-FeaturePlot(TERVA2_harmony, order = T, features= c("Icos", "Kit", "Il23r", "Rora", "Gata3"))
 Plasmacells <- FeaturePlot(TERVA2_harmony, features = c("Ighd", "IgD", "CD138-Syndecan-1", "CD45R-B220", "Tnfrsf17", "Cxcr4"))
-Monocytes <- FeaturePlot(TERVA2_harmony, features = c("Ly-6C", "Cx3cr1", "Ccr2", "Sell", "Spn", "Cd209a", "I-A-I-E", "Treml4"))
+Monocytes <- FeaturePlot(TERVA2_harmony, order=T, features = c("Ly6c1", "Ly6c2", "Ly-6C", "Cx3cr1", "Ccr2", "Sell", "CD62L", "Cd209a", "I-A-I-E", "Spn", "CD43", "Treml4"), ncol = 4)
 Macrophages <- FeaturePlot(TERVA2_harmony, order =T, features = c("Cd163","Cd80", "Cd86", "Ccr5", "CD11b", "CD11c", "Cd14", "CD15-SSEA-1", "Cd68", "Cd36", "Ptgs2", "Irf5", "Stat1", "Nos2", "Cxcr1", "Cxcr2", "Mrc1", "Irf4", "Stat6", "Socs3", "Sphk1", "Tlr8"))
 Fcrs <- FeaturePlot(TERVA2_harmony, features = c("B2m","Ero1l", "Fcamr", "Fcer1a", "Fcer1g", "Fcer2a", "Fcgrt", "Fcrla", "Fcrlb", "Fcrls", "Fcrl1", "Fcrl5", "Fcrl6", "Fcgbp", "Fcgrt", "Fcgr2b", "Fcgr4", "Fcgr3", "Fcgr1"))
 Igs_lc <- FeaturePlot(TERVA2_harmony, split.by = "Sample", features = c("Igkv3-4", "Igkv4-55", "Igkv1-135",  "Jchain", "Ighm"))
-Lgals3 <- FeaturePlot(TERVA2_harmony, features = c("Lgals3"))
+Lgals3 <- FeaturePlot(TERVA2_harmony, order = T, features = c("Lgals3", "Mac-2-Galectin-3"))
 Rgs5 <- FeaturePlot(TERVA2_harmony, features = c("Rgs5"))
 Pi16 <-FeaturePlot(TERVA2_harmony, features = c("Pi16"))
-Cd74 <- FeaturePlot(TERVA2_harmony, features = c("Cd74"))
+Cd74 <- FeaturePlot(TERVA2_harmony, features = c("Cd74", "CD44", "Col1a1", "Lum"))
+Calca <-FeaturePlot(TERVA2_harmony, order =T, features = c("Calca", "Igf1"))
+Meso <-FeaturePlot(TERVA2_harmony, order =T, features = c("Krt19", "Upk3b", "Msln"))
 
+#T cells
+DotPlot(TERVA2_harmony, scale = F, idents = c("3", "5", "20"), features= c("Cd8a", "Cd8b1", "Cd4", "Cd3d", "Cd3e", "Cd3g", "Tcf7", "Rag1", "Ccr9"), cols = c("blue", "gold"))
+VlnPlot(TERVA2_harmony, slot = "counts", idents = c("3", "5", "20"), features= c("Cd8a", "Cd8b1", "Cd4", "Cd3d", "Cd3e", "Cd3g", "Tcf7", "Rag1", "Ccr9"), cols = c("blue", "gold", "purple"))
+VlnPlot(TERVA2_harmony, assay = "ADT", slot = "counts", idents = c("3", "5", "20"), features= c("CD8a", "CD4"), cols = c("blue", "gold", "purple"))
+FeaturePlot(TERVA2_harmony, order = T, features= c("Cd8a", "CD8a", "Cd8b1", "Cd4", "CD4", "Cd3d", "Cd3e", "Cd3g"))
 
-Fadip / Fangio
-CD4_CD8
-Plasmacells
-Monocytes
-Macrophages
-Fcrs
-Igs_lc
-Lgals3
-Rgs5
-Pi16
-Cd74
+DPcells_Cd8a <- WhichCells(TERVA2_harmony, expression = Cd8a > 0 & Cd4 > 0)
+DPcells_Cd8b1 <- WhichCells(TERVA2_harmony, expression = Cd8b1 > 0 & Cd4 > 0)
+DPcells_Cd8b1_Cd8a <- WhichCells(TERVA2_harmony, expression = Cd8b1 > 0 & Cd8a > 0 & Cd4 > 0)
 
-molecule_counts <- VlnPlot(TERVA2_harmony, features = "nCount_RNA", group.by = "RNA_snn_res.0.7", cols = mycolors)
-gene_counts2 <- VlnPlot(TERVA2_harmony, features = "nFeature_RNA", group.by = "RNA_snn_res.0.7", cols = mycolors)
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
-clbycl_harmony_0.7 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, pt.size = 2, label.box = T, label.color = "white") +
-  labs(title = "Clustering with resolution 0.7")
-molecule_counts + gene_counts2 | clbycl_harmony_0.7
+DimPlot(TERVA2_harmony, cells.highlight = DPcells_Cd8a, order = T)
+
+DP_avgexpr <- as.data.frame(AverageExpression(TERVA2_harmony, assays = "RNA", features= c("Cd8a", "Cd8b1", "Cd4", "Cd3d", "Cd3e", "Cd3g", "Tcf7"), return.seurat = FALSE, slot = "data"))
+DP_avgexpr <- DP_avgexpr %>% dplyr::select(RNA.3, RNA.5, RNA.20)
+
+#Notch3 expr in VSMCs
+VlnPlot(TERVA2_harmony, slot = "counts", idents = c("17", "36", "30", "39", "28"), features= c("Notch3"))
+DP_avgexpr_Notch3 <- as.data.frame(AverageExpression(TERVA2_harmony, assays = "RNA", features= c("Notch3"), return.seurat = FALSE, slot = "data"))
+DP_avgexpr_Notch3 <- DP_avgexpr_Notch3 %>% dplyr::select(RNA.17, RNA.36, RNA.30, RNA.39, RNA.28)
+
+#Fibroblast / EC markers
+VlnPlot(TERVA2_harmony, slot = "counts", idents = c("4","28","3"), features= c("Pecam1", "Cdh5", "Col1a1", "Lum"))
+Cd74fibro <- WhichCells(TERVA2_harmony, expression = Cd74 > 0 & Col1a1 > 0 & Lum > 0)
+Ptprcendo <- WhichCells(TERVA2_harmony, expression = Ptprc > 0 & Pecam1 > 0 & Kdr > 0)
+DimPlot(TERVA2_harmony, cells.highlight = Cd74fibro, order = T)
+DimPlot(TERVA2_harmony, cells.highlight = Ptprcendo, order = T)
+
+#Dendritic cells
+VlnPlot(TERVA2_harmony, slot = "counts", idents = c("7","9","21"), features= c("Cd209a", "H2-DMb1", "Itgam", "Itgae", "Notch2", "Btla", "Clec9a", "Clec10a", "Sirpa", "Ccr7", "Mrc1"))
+
+#Monocytes / Macrophages
+VlnPlot(TERVA2_harmony, slot = "data", idents = c("1","17",32), features= c("Cd68", "Socs3", "Tgm2", "Mrc1", "Retnla", "Cd14", "Fcgr3"))
+
+molecule_counts <- VlnPlot(TERVA2_harmony, features = "nCount_RNA", group.by = "RNA_snn_res.1", cols = mycolors)
+gene_counts <- VlnPlot(TERVA2_harmony, features = "nFeature_RNA", group.by = "RNA_snn_res.1", cols = mycolors)
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.1")
+nb.cols <- 41
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+clbycl_harmony_1 <- DimPlot(TERVA2_harmony,label = T, shuffle = T, cols = mycolors, pt.size = 2, label.box = T, label.color = "white") +
+  labs(title = "Clustering with resolution 1")
+molecule_counts + gene_counts | clbycl_harmony_1
+
+clbycl_harmony_1_tissue <- DimPlot(TERVA2_harmony,label = T, shuffle = T, split.by = "Sample", cols = mycolors, pt.size = 2, label.box = T, label.color = "white") +
+  labs(title = "Clustering with resolution 1")
+clbycl_harmony_1_tissue
 
 # Check CD45 across the data
 
 T2_harmony_ptprc <- FeaturePlot(TERVA2_harmony, features= c("Ptprc"), order = T)
 T2_harmony_ptprc
 
-#### Add disease group id ####
+#### Add disease and tissue group id ####
 
 coldata <- as.data.frame(TERVA2_harmony@meta.data$Sample)
 
 coldata <- mutate(coldata,
                   Status = case_when(
-                    startsWith(TERVA2_harmony@meta.data$Sample, "LD") ~ "Late_disease",
-                    startsWith(TERVA2_harmony@meta.data$Sample, "PL") ~ "Prelesion"
+                    startsWith(TERVA2_harmony@meta.data$Sample, "OB") ~ "Obese",
+                    startsWith(TERVA2_harmony@meta.data$Sample, "NOB") ~ "Non-Obese"
                   ))
 
 group_id <- coldata$Status
 TERVA2_harmony@meta.data$group_id <- as.factor(group_id)
 
-#### Predicting cell types from reference ####
-
-library(celldex)
-library(SingleR)
-
-mouse.ref <- celldex::MouseRNAseqData()
-saveRDS(mouse.ref, "mouseref.rds")
-mouse.ref <- readRDS("/scratch/project_2005050/Rstats/mouseref.rds")
-
-sce <- as.SingleCellExperiment((DietSeurat(TERVA2_harmony)))
-sce
-
-mouse.main <- SingleR(test= sce, assay.type.test = 1, ref = mouse.ref, labels = mouse.ref$label.main)
-mouse.fine <- SingleR(test= sce, assay.type.test = 1, ref = mouse.ref, labels = mouse.ref$label.fine)
-
-
-table(mouse.main$pruned.labels)
-table(mouse.fine$pruned.labels)
-
-
-TERVA2_harmony@meta.data$mouse.main <- mouse.main$pruned.labels
-TERVA2_harmony@meta.data$mouse.fine <- mouse.fine$pruned.labels
-
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "mouse.main")
-m_main <- DimPlot(TERVA2_harmony, label = T , repel = T, label.size = 3) + NoLegend()
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "mouse.fine")
-m_fine <- DimPlot(TERVA2_harmony, label = T , repel = T, label.size = 3) + NoLegend()
-
-m_fine + m_main
-
-#### Differential gene expression between clusters ####
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "RNA_snn_res.0.7")
-TERVA2_harmony_allmarkers_wilcoxon <- FindAllMarkers(TERVA2_harmony, verbose = T, min.cells.group = 10)
-saveRDS(TERVA2_harmony_allmarkers_wilcoxon, "TERVA2_harmony_allmarkers_wilcoxon_reQC.rds")
-Cluster_markers <- readRDS("TERVA2_harmony_allmarkers_wilcoxon_reQC.rds")
-
-split <- split(TERVA2_harmony_allmarkers_wilcoxon, TERVA2_harmony_allmarkers_wilcoxon$cluster)
-list2env(split, envir = globalenv())
-
-#### Rename clusters ####
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.0.7")
-TERVA2_harmony <- RenameIdents(TERVA2_harmony, 
-                               "0" = "B cells", "1" = "Fibroblasts", "2" = "Cd8+ T cells", "3" = "M2 Macrophages", 
-                               "4" = "M1 Macrophages", "5" = "Cd4+ Lef1+ Tcf7+ Naive T cells", "6" = "Cd4+ Cxcr6+ T cells", "7" = "Fabp4+ Gpihbp1+ Endothelial cells EC2", 
-                               "8" = "Pi16+ Fibroblasts", "9" = "Intermediate monocytes", "10" = "Mgp+ Aebp1+ Activated fibroblasts", "11" = "Classical and non-classical monocytes", 
-                               "12" = "Vascular smooth muscle cells", "14" = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells", 
-                               "15" = "Lgals3+ Macrophages", "16" = "Mki67+ Top2a+ Dividing cells", 
-                               "17" = "s100a9+/a8+ Granulocytes", "18" = "Cytl1+ Clu+ Endothelial cells EC1", "19" = "Conventional Dendritic cells DC1",
-                               "20" = "Rgs5+ Endothelial cells", "21" = "Natural killer cells", "22" = "Conventional Dendritic cells DC2", 
-                               "23" = "Plasma cells", "24" = "Ccl8+ Fibroblasts", "25" = "Granulocytes",
-                               "26" = "Mesothelial cells", "27" = "Fabp4+ Gpihbp1+ Endothelial cells EC2", 
-                               "28" = "Depp1+ Endothelial cells")
-
-TERVA2_harmony$celltype.group <- paste(Idents(TERVA2_harmony), TERVA2_harmony$group_id, sep = "_")
-TERVA2_harmony$celltype <- Idents(TERVA2_harmony)
-celltypes <- as.vector(unique(TERVA2_harmony$celltype))
-celltypes
-#[1] "Cd4+ Lef1+ Tcf7+ Naive T cells"        "Natural killer cells"                 
-#[3] "Cd8+ T cells"                          "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells"   
-#[5] "B cells"                               "Intermediate monocytes"               
-#[7] "Lgals3+ Macrophages"                   "Plasma cells"                         
-#[9] "Mki67+ Top2a+ Dividing cells"          "Vascular smooth muscle cells"         
-#[11] "M1 Macrophages"                        "Cd4+ Cxcr6+ T cells"                  
-#[13] "Pi16+ Fibroblasts"                     "Fibroblasts"                          
-#[15] "M2 Macrophages"                        "Conventional Dendritic cells DC2"     
-#[17] "Classical and non-classical monocytes" "s100a9+/a8+ Granulocytes"             
-#[19] "Conventional Dendritic cells DC1"      "Granulocytes"                         
-#[21] "Cytl1+ Clu+ Endothelial cells EC1"     "Mgp+ Aebp1+ Activated fibroblasts"    
-#[23] "Rgs5+ Endothelial cells"               "Mesothelial cells"                    
-#[25] "Fabp4+ Gpihbp1+ Endothelial cells EC2" "Ccl8+ Fibroblasts"                    
-#[27] "Depp1+ Endothelial cells" 
-
-Idents(TERVA2_harmony) <- "celltype"
-nb.cols <- 27
-mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
-reannot <- DimPlot(TERVA2_harmony, pt.size = 1.2, cols = mycolors, order = T)
-reannot + 
-  labs(title = "Cell annotations of the integrated data") +
-  theme(plot.title = element_text(size=30, hjust= 0.5),
-        axis.title = element_text(size=20),
-        axis.text = element_text(size=20),
-        ) +
-  guides(col = guide_legend(ncol = 1))
-
-#The same as above but without the legend
-Idents(TERVA2_harmony) <- "celltype"
-reannot <- DimPlot(TERVA2_harmony, label = T, label.box = T, label.color = "darkgray", pt.size = 1.2, cols = mycolors, order = T) + NoLegend()
-reannot + 
-  labs(title = "Clustering of the integrated data") 
-
-Idents(TERVA2_harmony) <- "celltype"
-reannot2 <- DimPlot(TERVA2_harmony, split.by = "tissue_id", pt.size = 1.2, cols = mycolors, order = T) + NoLegend()
-reannot2 + 
-  labs(title = "Clustering of the integrated data") 
-
-#Visualization of some GOI's in specific cells
-Idents(TERVA2_harmony) <- "celltype"
-VlnPlot(TERVA2_harmony, features = c("Lgals3"), idents = c("Lgals3+ Macrophages","M1 Macrophages","M2 Macrophages", "Fabp4+ Gpihbp1+ Endothelial cells EC2", "Vascular smooth muscle cells", "Cytl1+ Clu+ Endothelial cells EC1"), split.by = "Sample", cols = c("darkorange", "magenta", "cyan4", "tomato", "turquoise2", "plum3", "slateblue2", "yellow")) # + theme(legend.position = 'none')
-Idents(TERVA2_harmony) <- "celltype.group"
-RidgePlot(TERVA2_harmony, features = c("Lgals3"), cols = mycolors, idents = c("Lgals3+ Macrophages_Late_disease", "Lgals3+ Macrophages_Prelesion","M1 Macrophages_Late_disease","M1 Macrophages_Prelesion", "M2 Macrophages_Late_disease", "M2 Macrophages_Prelesion", "Vascular smooth muscle cells_Late_disease", "Vascular smooth muscle cells_Prelesion", "Fabp4+ Gpihbp1+ Endothelial cells EC2_Late_disease", "Fabp4+ Gpihbp1+ Endothelial cells EC2_Prelesion", "Cytl1+ Clu+ Endothelial cells EC1_Late_disease", "Cytl1+ Clu+ Endothelial cells EC1_Prelesion"), sort = "increasing") + NoLegend()
-DoHeatmap(TERVA2_harmony, features = c("Lgals3"))
-
-#Plot by group
-
-diseasestates <- DimPlot(TERVA2_harmony, reduction = "umap", group.by = "group_id", pt.size = 1.2, label = T, label.box =  T, label.color = "gray", repel = T, cols = c("#009292", "#490092")) + NoLegend()
-diseasestates
-
-(reannot + diseasestates) / (reannot2)
-
-FeaturePlot(TERVA2_harmony, split.by = "group_id", features = c("Lgals3", "Rgs5", "Pi16", "Cd74", "Igkc"))
-
-#Find conserved markers for cells of interest between PL and LD (This is across tissues)
-
-TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "celltype") 
-B.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "B cells", grouping.var = "group_id", verbose = TRUE)
-T.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = c("Cd8+ T cells", "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells","Cd4+ Lef1+ Tcf7+ Naive T cells", "Natural killer cells", "Cd4+ Cxcr6+ T cells"), grouping.var = "group_id", verbose = TRUE)
-MacrophageM1.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "M1 Macrophages", grouping.var = "group_id", verbose = TRUE)
-MacrophageM2.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "M2 Macrophages", grouping.var = "group_id", verbose = TRUE)
-MacrophageLgals3.celltypemarkers <- FindConservedMarkers(TERVA2_harmony, ident.1 = "Lgals3+ Macrophages", grouping.var = "group_id", verbose = TRUE)
-
-#Find DE genes between PL and LD (across tissues)
-
-####  DE from the reannotated cell types DE between states ####
-
-#[1] "Cd4+ Lef1+ Tcf7+ Naive T cells"        "Natural killer cells"                 
-#[3] "Cd8+ T cells"                          "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells"   
-#[5] "B cells"                               "Intermediate monocytes"               
-#[7] "Lgals3+ Macrophages"                   "Plasma cells"                         
-#[9] "Mki67+ Top2a+ Dividing cells"          "Vascular smooth muscle cells"         
-#[11] "M1 Macrophages"                        "Cd4+ Cxcr6+ T cells"                  
-#[13] "Pi16+ Fibroblasts"                     "Fibroblasts"                          
-#[15] "M2 Macrophages"                        "Conventional Dendritic cells DC2"     
-#[17] "Classical and non-classical monocytes" "s100a9+/a8+ Granulocytes"             
-#[19] "Conventional Dendritic cells DC1"      "Granulocytes"                         
-#[21] "Cytl1+ Clu+ Endothelial cells EC1"     "Mgp+ Aebp1+ Activated fibroblasts"    
-#[23] "Rgs5+ Endothelial cells"               "Mesothelial cells"                    
-#[25] "Fabp4+ Gpihbp1+ Endothelial cells EC2" "Ccl8+ Fibroblasts"                    
-#[27] "Depp1+ Endothelial cells" 
-
-Idents(TERVA2_harmony) <- "celltype.group"
-Cd4Lef1Tcf7NaiveTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd4+ Lef1+ Tcf7+ Naive T cells_Late_disease", ident.2 = "Cd4+ Lef1+ Tcf7+ Naive T cells_Prelesion", verbose = FALSE)
-NK <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Natural killer cells_Late_disease", ident.2 = "Natural killer cells_Prelesion", verbose = FALSE)
-Cd8posT <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ T cells_Late_disease", ident.2 = "Cd8+ T cells_Prelesion", verbose = FALSE)
-Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Late_disease", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Prelesion", verbose = FALSE)
-Cd4Cxcr6Tcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd4+ Cxcr6+ T cells_Late_disease", ident.2 = "Cd4+ Cxcr6+ T cells_Prelesion", verbose = FALSE)
-Bcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
-M1Macrophages <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "M1 Macrophages_Late_disease", ident.2 = "M1 Macrophages_Prelesion", verbose = FALSE)
-M2Macrophages <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "M2 Macrophages_Late_disease", ident.2 = "M2 Macrophages_Prelesion", verbose = FALSE)
-Macrophages_Lgals3 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lgals3+ Macrophages_Late_disease", ident.2 = "Lgals3+ Macrophages_Prelesion", verbose = FALSE)
-Plasmacells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Plasma cells_Late_disease", ident.2 = "Plasma cells_Prelesion", verbose = FALSE)
-Mki67Top2aDividingcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mki67+ Top2a+ Dividing cells_Late_disease", ident.2 = "Mki67+ Top2a+ Dividing cells_Prelesion", verbose = FALSE)
-Fibro_Pi16 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pi16+ Fibroblasts_Late_disease", ident.2 = "Pi16+ Fibroblasts_Prelesion", verbose = FALSE)
-Fibroblasts <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fibroblasts_Late_disease", ident.2 = "Fibroblasts_Prelesion", verbose = FALSE)
-Fibro_Mgp <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Late_disease", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Prelesion", verbose = FALSE)
-Fibro_Ccl8 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Ccl8+ Fibroblasts_Late_disease", ident.2 = "Ccl8+ Fibroblasts_Prelesion", verbose = FALSE)
-Int_monocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Intermediate monocytes_Late_disease", ident.2 = "Intermediate monocytes_Prelesion", verbose = FALSE)
-Conv_DC1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Late_disease", ident.2 = "Conventional Dendritic cells DC1_Prelesion", verbose = FALSE)
-Conv_DC2 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells DC2_Late_disease", ident.2 = "Conventional Dendritic cells DC2_Prelesion", verbose = FALSE)
-Class_monocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Classical and non-classical monocytes_Late_disease", ident.2 = "Classical and non-classical monocytes_Prelesion", verbose = FALSE)
-Granulocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
-s100a9_a8Granulocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Late_disease", ident.2 = "s100a9+/a8+ Granulocytes_Prelesion", verbose = FALSE)
-Cytl1Clu_EC1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cytl1+ Clu+ Endothelial cells EC1_Late_disease", ident.2 = "Cytl1+ Clu+ Endothelial cells EC1_Prelesion", verbose = FALSE)
-Fabp4Gpihbp1_EC2 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fabp4+ Gpihbp1+ Endothelial cells EC2_Late_disease", ident.2 = "Fabp4+ Gpihbp1+ Endothelial cells EC2_Prelesion", verbose = FALSE)
-Rgs5_EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Late_disease", ident.2 = "Rgs5+ Endothelial cells_Prelesion", verbose = FALSE)
-VSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vascular smooth muscle cells_Late_disease", ident.2 = "Vascular smooth muscle cells_Prelesion", verbose = FALSE)
-Mesothelialcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mesothelial cells_Late_disease", ident.2 = "Mesothelial cells_Prelesion", verbose = FALSE)
-Depp1_EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Depp1+ Endothelial cells_Late_disease", ident.2 = "Depp1+ Endothelial cells_Prelesion", verbose = FALSE)
-
-
-sctlist <- c("Cd4Lef1Tcf7NaiveTcells", "Cd8posT", "NK", "Cd8Ccl5Nkg7CytotoxicTcells", "Cd4Cxcr6Tcells", "Bcells", "M1Macrophages", "M2Macrophages", "Macrophages_Lgals3", "Plasmacells", 
-             "Mki67Top2aDividingcells", "Fibro_Pi16", "Fibroblasts", "Fibro_Mgp", "Fibro_Ccl8", "Int_monocytes", "Conv_DC1", "Conv_DC2", "Class_monocytes", "Granulocytes", "s100a9_a8Granulocytes", 
-             "Cytl1Clu_EC1", "Fabp4Gpihbp1_EC2", "VSMCs", "Mesothelialcells", "Depp1_EC")
-
-for(i in 1:length(sctlist)) {                
-  write.csv2(get(sctlist[i]),
-             paste("/scratch/project_2005050/Rstats/",
-                   sctlist[i],
-                   ".csv"),
-             row.names = TRUE)
-}
-
-# Visualization of DE genes between PL and LD (across tissues)
-
-ev1 <- EnhancedVolcano(M1Macrophages,
-                lab = rownames(M1Macrophages),
-                x = 'avg_log2FC',
-                y = 'p_val_adj',
-                title = 'Late disease vs Prelesion in M1 Macrophages',
-                pCutoff = 1e-2,
-                FCcutoff = 0.4,
-                pointSize = 3.0,
-                col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                labSize = 6.0,
-                titleLabSize = 15.0)
-
-ev2 <- EnhancedVolcano(M2Macrophages,
-                lab = rownames(M2Macrophages),
-                x = 'avg_log2FC',
-                y = 'p_val_adj',
-                title = 'Late disease vs Prelesion in M2 Macrophages',
-                pCutoff = 1e-2,
-                FCcutoff = 0.4,
-                pointSize = 3.0,
-                col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                labSize = 6.0,
-                titleLabSize = 15.0)
-
-ev3 <- EnhancedVolcano(Macrophages_Lgals3 ,
-                lab = rownames(Macrophages_Lgals3),
-                x = 'avg_log2FC',
-                y = 'p_val_adj',
-                title = 'Late disease vs Prelesion in Lgals3+ Macrophages',
-                pCutoff = 1e-2,
-                FCcutoff = 0.4,
-                pointSize = 3.0,
-                col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                labSize = 6.0,
-                titleLabSize = 15.0)
-
-ev1 + ev2 + ev3
-
-
-ev4 <- EnhancedVolcano(Cd4Lef1Tcf7NaiveTcells,
-                       lab = rownames(Cd4Lef1Tcf7NaiveTcells),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'Late disease vs Prelesion in Cd4+ Lef1+ Tcf7+ Naive T cells',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev5 <- EnhancedVolcano(Cd4Cxcr6Tcells ,
-                       lab = rownames(Cd4Cxcr6Tcells ),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'Late disease vs Prelesion in Cd4+ Cxcr6+ T cells ',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev6 <- EnhancedVolcano(Cd8posT,
-                       lab = rownames(Cd8posT),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'Late disease vs Prelesion in Cd8+ T cells',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev7 <- EnhancedVolcano(Cd8Ccl5Nkg7CytotoxicTcells,
-                       lab = rownames(Cd8Ccl5Nkg7CytotoxicTcells),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'Late disease vs Prelesion in Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-(ev4 + ev5) / (ev6 + ev7)
-
-#First clean some genes that are usual cause of technical artefacts.
-
-Fibro_Ccl8$gene <- rownames(Fibro_Ccl8)
-Fibro_Ccl8 <- filter(Fibro_Ccl8, !str_detect(gene, "Gm42418")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "Gm8797"))
-
-Fibro_Mgp$gene <- rownames(Fibro_Mgp)
-Fibro_Mgp <- filter(Fibro_Mgp, !str_detect(gene, "Gm42418")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "Gm8797"))
-
-Fibro_Pi16$gene <- rownames(Fibro_Pi16)
-Fibro_Pi16 <- filter(Fibro_Pi16, !str_detect(gene, "Gm42418")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "Gm8797"))
-
-ev8 <- EnhancedVolcano(Fibroblasts,
-                       lab = rownames(Fibroblasts),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'Late disease vs Prelesion in Fibroblasts',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev9 <- EnhancedVolcano(Fibro_Ccl8,
-                       lab = rownames(Fibro_Ccl8),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'Late disease vs Prelesion in Ccl8+ Fibroblasts',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev10 <- EnhancedVolcano(Fibro_Mgp,
-                       lab = rownames(Fibro_Mgp),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'Late disease vs Prelesion in Mgp+ Fibroblasts',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev11 <- EnhancedVolcano(Fibro_Pi16,
-                       lab = rownames(Fibro_Pi16),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'Late disease vs Prelesion in Pi16+ Fibroblasts',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-(ev8 + ev9) / (ev10 + ev11)
-
-
-
-
-#### GSEA analysis with clusterProfiler ####
-
-#Set the genes in analysis as the background. 
-background <- rownames(TERVA2_harmony@assays$RNA@counts)
-
-#Cut off genes which have a adjusted p-value bigger than 0.05 
-cutoff_p <- function(x) { #function to do the pruning
-  genes <- subset(x, p_val_adj < 0.05)
-  return(genes)
-}
-
-M1_macros <- cutoff_p(M1Macrophages)
-
-# use bitr to obtain Entrez IDs
-
-gene <- rownames(M1_macros)
-gene.go <- bitr(gene, fromType = "SYMBOL",
-                toType = "ENTREZID",
-                OrgDb = org.Mm.eg.db)
-
-eGO <- enrichGO(gene          = gene.go$ENTREZID,
-                OrgDb         = org.Mm.eg.db,
-                universe = names(background),
-                pAdjustMethod = "fdr",
-                pvalueCutoff  = 0.01)
-head(summary(eGO))
-dotplot(eGO, showCategory=30)
-
-#THIS NEED TO BE FIXED KEGG NAMES NOT WORKING NOW
-R.utils::setOption("clusterProfiler.download.method","auto")
-gene.go$"ncbi-geneid" <- gene.go$ENTREZID
-gene.kegg <- bitr_kegg(gene.go, fromType = "ncbi-geneid",
-                toType = "kegg", organism = "mouse")
-
-eKEGG <- enrichKEGG(gene = gene.kegg,
-                universe = names(background),
-                keyType = "kegg",
-                organism = "mouse",
-                pAdjustMethod = "fdr",
-                pvalueCutoff  = 0.01)
-head(summary(eKEGG))
-dotplot(eKEGG, showCategory=30)
-
-
-#### Tissue specific analyses ####
+#Create tissue ID's
 
 tissuedata <- as.data.frame(TERVA2_harmony@meta.data$Sample)
 
@@ -661,85 +337,186 @@ tissuedata <- mutate(tissuedata,
 tissue_id <- tissuedata$Tissue
 TERVA2_harmony@meta.data$tissue_id <- as.factor(tissue_id)
 
-TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "tissue_id") #When all clusters separately 
+#### Predicting cell types from reference ####
+
+#library(celldex)
+#library(SingleR)
+
+#mouse.ref <- celldex::MouseRNAseqData()
+#saveRDS(mouse.ref, "mouseref.rds")
+#mouse.ref <- readRDS("/scratch/project_2005050/Rstats/mouseref.rds")
+#imm.ref <- celldex::ImmGenData()
+
+#sce <- as.SingleCellExperiment((DietSeurat(TERVA2_harmony)))
+#sce
+
+#mouse.main <- SingleR(test= sce, assay.type.test = 1, ref = mouse.ref, labels = mouse.ref$label.main)
+#mouse.fine <- SingleR(test= sce, assay.type.test = 1, ref = mouse.ref, labels = mouse.ref$label.fine)
 
 
+#table(mouse.main$pruned.labels)
+#table(mouse.fine$pruned.labels)
 
 
-AO <- subset(TERVA2_harmony, idents = "Aorta")
-PVAT <- subset(TERVA2_harmony, idents = "PVAT")
-eWAT <- subset(TERVA2_harmony, idents = "eWAT")
-Spleen <- subset(TERVA2_harmony, idents = "Spleen")
-
-# FindAllMarkers per tissue type ####
-
-               
-AO <- SetIdent(AO,value = "celltype")               
-AO_allmarkers_macrophages_wilcoxon <- FindMarkers(AO, ident.1 = "Lgals3+ Macrophages", ident.2 = c("Macrophages", "Macrophages activated"), verbose = T, min.cells.group = 30)
-saveRDS(AO_allmarkers_wilcoxon, "AO_allmarkers_Macrophages_wilcoxon_reclustered.rds")
-
-PVAT <- SetIdent(PVAT,value = "seurat_clusters")
-PVAT_allmarkers_wilcoxon <- FindAllMarkers(PVAT, verbose = T, min.cells.group = 10)
-saveRDS(PVAT_allmarkers_wilcoxon, "PVAT_allmarkers_wilcoxon_reQC.rds")
-
-eWAT <- SetIdent(eWAT,value = "seurat_clusters")
-eWAT_allmarkers_wilcoxon <- FindAllMarkers(eWAT, verbose = T, min.cells.group = 10)
-saveRDS(eWAT_allmarkers_wilcoxon, "eWAT_allmarkers_wilcoxon_reQC.rds")
-
-Spleen <- SetIdent(Spleen,value = "seurat_clusters")
-Spleen_allmarkers_wilcoxon <- FindAllMarkers(Spleen, verbose = T, min.cells.group = 10)
-saveRDS(Spleen_allmarkers_wilcoxon, "Spleen_allmarkers_wilcoxon_reQC.rds")
+#TERVA2_harmony@meta.data$mouse.main <- mouse.main$pruned.labels
+#TERVA2_harmony@meta.data$mouse.fine <- mouse.fine$pruned.labels
 
 
-#### Aorta ####
+#TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "mouse.main")
+#m_main <- DimPlot(TERVA2_harmony, label = T , repel = T, label.size = 3) + NoLegend()
 
-Idents(AO) <- "celltype.group"
-DimPlot(AO, label = T , repel = T, label.size = 3) + NoLegend()
-DimPlot(AO, reduction = "umap", group.by = "group_id", label = T , repel = T, label.size = 3) + NoLegend()
-FeaturePlot(AO, features = c("Cd3d", "Cd79a", "Igkv3-4"))
-p1 <- DimPlot(AO, reduction = "umap", split.by = "group_id", group.by = "seurat_clusters", pt.size = 1.2, label = T , repel = T, label.size = 4) + NoLegend() + ggtitle("Aorta")
-l1 <- FeaturePlot(AO, features = c("Ly6a", "Ly-6A-E-Sca-1")) +
-  ggtitle("Ly-6A-E-Sca-1", subtitle = "Aorta")
+#TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "mouse.fine")
+#m_fine <- DimPlot(TERVA2_harmony, label = T , repel = T, label.size = 3) + NoLegend()
 
-Idents(AO) <- "celltype"
-macros_AO <- subset(AO, idents = c("Macrophages", "Macrophages activated", "Lgals3+ Macrophages"))
-Idents(macros_AO) <- "group_id"
-FeaturePlot(macros_AO, split.by = "group_id", features = c("Trem2", "Lgals3"), blend = TRUE, cols = c("navy", "darkgoldenrod1"))
-FeaturePlot(macros_AO, split.by = "group_id", features = c("Lamp2", "Mrc1"), blend = TRUE, cols = c("navy", "darkgoldenrod1"))
-RidgePlot(macros_AO, group.by = "group_id", features = c("Trem2", "Lgals3"))
+#m_fine + m_main
 
-#AO[["percent.ig"]] <- PercentageFeatureSet(AO, pattern = "^Ig-") +  test.use= "LR", latent.vars = c("percent.mt", "percent.rb","percent.ig") in FindMarkers did not change anything
+#### Differential gene expression between clusters ####
 
-# AO LD vs PL DE's per cell type ####
-Idents(AO) <- "celltype.group"
-AO_Cd4posT <- FindMarkers(AO, only.pos = F, ident.1 = "Cd4+ Tcells_Late_disease", ident.2 = "Cd4+ Tcells_Prelesion", verbose = FALSE)
-AO_NK <- FindMarkers(AO, only.pos = F, ident.1 = "Natural killer cells_Late_disease", ident.2 = "Natural killer cells_Prelesion", verbose = FALSE)
-AO_Cd8posT <- FindMarkers(AO, only.pos = F, ident.1 = "Cd8+ Tcells_Late_disease", ident.2 = "Cd8+ Tcells_Prelesion", verbose = FALSE)
-AO_Cd8posCcl5posTeff <- FindMarkers(AO, only.pos = F, ident.1 = "Cd8+ Ccl5+ Teffs_Late_disease", ident.2 = "Cd8+ Ccl5+ Teffs_Prelesion", verbose = FALSE)
-AO_Cd4Foposxp3posTreg <- FindMarkers(AO, only.pos = F, ident.1 = "Cd4+ Foxp3+ Tregs_Late_disease", ident.2 = "Cd4+ Foxp3+ Tregs_Prelesion", verbose = FALSE)
-AO_Bcells_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
-AO_Macrophagesact_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Macrophages activated_Late_disease", ident.2 = "Macrophages activated_Prelesion", verbose = FALSE)
-AO_Plasmacells_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Plasma cells_Late_disease", ident.2 = "Plasma cells_Prelesion", verbose = FALSE)
-AO_Dividing <- FindMarkers(AO, only.pos = F, ident.1 = "Dividing cells_Late_disease", ident.2 = "Dividing cells_Prelesion", verbose = FALSE)
-AO_Fibro_Pi16 <- FindMarkers(AO, only.pos = F, ident.1 = "Pi16+ adventitial Fibroblasts_Late_disease", ident.2 = "Pi16+ adventitial Fibroblasts_Prelesion", verbose = FALSE)
-AO_Fibroblasts_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Fibroblasts_Late_disease", ident.2 = "Fibroblasts_Prelesion", verbose = FALSE)
-AO_Fibro_Mgp_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Mgp+ Fibroblasts_Late_disease", ident.2 = "Mgp+ Fibroblasts_Prelesion", verbose = FALSE)
-AO_Fibroact_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Fibroblasts activated_Late_disease", ident.2 = "Fibroblasts activated_Prelesion", verbose = FALSE)
-AO_Macrophages_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Macrophages_Late_disease", ident.2 = "Macrophages_Prelesion", verbose = FALSE)
-AO_Macrophages_Lgals3_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Lgals3+ Macrophages_Late_disease", ident.2 = "Lgals3+ Macrophages_Prelesion", verbose = FALSE)
-AO_Int_monocytes <- FindMarkers(AO, only.pos = F, ident.1 = "Intermediate Monocytes_Late_disease", ident.2 = "Intermediate Monocytes_Prelesion", verbose = FALSE)
-AO_ILC <- FindMarkers(AO, only.pos = F, ident.1 = "Innate lymphoid cells_Late_disease", ident.2 = "Innate lymphoid cells_Prelesion", verbose = FALSE)
-AO_Conv_DC2 <- FindMarkers(AO, only.pos = F, ident.1 = "Conventional Dendritic cells 2_Late_disease", ident.2 = "Conventional Dendritic cells 2_Prelesion", verbose = FALSE)
-AO_Class_monocytes <- FindMarkers(AO, only.pos = F, ident.1 = "Classical and non-classical Monocytes_Late_disease", ident.2 = "Classical and non-classical Monocytes_Prelesion", verbose = FALSE)
-AO_Granulocytes_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
-AO_Conv_DC1 <- FindMarkers(AO, only.pos = F, ident.1 = "Conventional Dendritic cells 1_Late_disease", ident.2 = "Conventional Dendritic cells 1_Prelesion", verbose = FALSE)
-AO_EC_rgs5_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Rgs5+ EC's_Late_disease", ident.2 = "Rgs5+ EC's_Prelesion", verbose = FALSE)
-AO_VSMCs_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Vascular smooth muscle cells_Late_disease", ident.2 = "Vascular smooth muscle cells_Prelesion", verbose = FALSE)
-AO_MAST_reannot <- FindMarkers(AO, only.pos = F, ident.1 = "Hdc+ Cpa3+ MAST cells_Late_disease", ident.2 = "Hdc+ Cpa3+ MAST cells_Prelesion", verbose = FALSE)
+#TERVA2_harmony <- SetIdent(TERVA2_harmony, value = "RNA_snn_res.1")
+#TERVA2_harmony_allmarkers_wilcoxon <- FindAllMarkers(TERVA2_harmony, verbose = T, min.cells.group = 10)
+#saveRDS(TERVA2_harmony_allmarkers_wilcoxon, "TERVA2_harmony_allmarkers_wilcoxon_reQC.rds")
+Cluster_markers <- readRDS("TERVA2_harmony_allmarkers_wilcoxon_reQC.rds")
 
-sctlist <- c("AO_Cd4posT", "AO_Cd8posT", "AO_NK", "AO_Cd8posCcl5posTeff", "AO_Cd4Foposxp3posTreg", "AO_Bcells_reannot", "AO_Macrophagesact_reannot", "AO_Plasmacells_reannot", "AO_Dividing", "AO_Fibro_Pi16", 
-             "AO_Fibroblasts_reannot", "AO_Fibro_Mgp_reannot", "AO_Fibroact_reannot", "AO_Macrophages_reannot", "AO_Macrophages_Lgals3_reannot", "AO_Int_monocytes", "AO_ILC", "AO_Conv_DC2", "AO_Class_monocytes", 
-             "AO_Granulocytes_reannot", "AO_Conv_DC1", "AO_EC_rgs5_reannot", "AO_VSMCs_reannot", "AO_MAST_reannot")
+#split <- split(TERVA2_harmony_allmarkers_wilcoxon, TERVA2_harmony_allmarkers_wilcoxon$cluster)
+#list2env(split, envir = globalenv())
+
+top6 <- Cluster_markers %>%
+  group_by(cluster) %>%
+  top_n(n = 6, wt = avg_log2FC)
+
+clusterheatmap <- DoHeatmap(subset(TERVA2_harmony, downsample=200), slot = "scale.data", features = top6$gene, size = 4, angle = 90, label = T, group.colors = mycolors) + NoLegend() + 
+  theme(axis.text.y = element_text(size=12)) 
+
+#### Rename clusters ####
+
+TERVA2_harmony <- SetIdent(TERVA2_harmony,value = "RNA_snn_res.1")
+TERVA2_harmony <- RenameIdents(TERVA2_harmony, 
+                               "0" = "B cells", "1" = "Folr2+ Lyve1+ M2 Macrophages", "2" = "Ccl11+ Fibroblasts", "3" = "Lef1+ Tcf7+ Cd4+ T cells", 
+                               "4" = "Gpihbp1+ Fabp4+ Endothelial cells", "5" = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells", "6" = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages", 
+                               "7" = "Cd248+ Pi16+ Fibroblasts", "8" = "Mfap4+ Fibroblasts",
+                               "9" = "Conventional Dendritic cells DC1", "10" = "Mgp+ Aebp1+ Activated fibroblasts", "11" = "Classical and non-classical monocytes", 
+                               "13" = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells", "14" = "Foxp3+ Regulatory T cells", 
+                               "15" = "Gpihbp1+ Fabp4+ Endothelial cells", "16" = "Innate lymphoid cells", 
+                               "17" = "Vascular smooth muscle cells", "18" = "s100a9+/a8+ Granulocytes", "19" = "Intermediate monocytes",
+                               "20" = "Vps37b+ Ramp3+ Cd8+ T memory cells", "21" = "Trem2+ Lgals3+ Macrophages", "22" = "Mki67+ Top2a+ Proliferating cells", 
+                               "23" = "Natural killer cells", "24" = "Conventional Dendritic cells DC1", "25" = "Fscn1+ Apol7c+ Dendritic cells",
+                               "26" = "Pf4+ Retnla+ Macrophages", "27" = "Plasma cells", "28" = "Vascular smooth muscle cells", "29" = "Mesothelial cells",
+                               "30" = "Notch3 low VSMCs", "31" = "Il1b+ Fibroblasts", "32" = "Rgs5+ Endothelial cells", "33" = "Gpihbp1+ Fabp4+ Endothelial cells",
+                               "34" = "Cd248+ Pi16+ Fibroblasts", "35" = "Gpihbp1+ Fabp4+ Endothelial cells", "36" = "Notch3 high VSMCs", "37" = "Pecam1+ Cd5+ Col1a1+ Lum+ cells",
+                               "38" = "MAST cells", "39" = "Notch3 low VSMCs", "40" = "s100a9+/a8+ Granulocytes")
+
+TERVA2_harmony$celltype.group <- paste(Idents(TERVA2_harmony), TERVA2_harmony$group_id, sep = "_")
+TERVA2_harmony$celltype <- Idents(TERVA2_harmony)
+celltypes <- as.vector(unique(TERVA2_harmony$celltype))
+celltypes
+
+#[1] "Vps37b+ Ramp3+ Cd8+ T memory cells"           "Natural killer cells"                         "Lef1+ Tcf7+ Cd4+ T cells"                    
+#[4] "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells"           "Innate lymphoid cells"                        "Gpihbp1+ Fabp4+ Endothelial cells"           
+#[7] "B cells"                                      "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages" "Classical and non-classical monocytes"       
+#[10] "Mki67+ Top2a+ Proliferating cells"            "Vascular smooth muscle cells"                 "Trem2+ Lgals3+ Macrophages"                  
+#[13] "Conventional Dendritic cells DC1"             "Cd248+ Pi16+ Fibroblasts"                     "Mfap4+ Fibroblasts"                          
+#[16] "Folr2+ Lyve1+ M2 Macrophages"                 "Pf4+ Retnla+ Macrophages"                     "Foxp3+ Regulatory T cells"                   
+#[19] "Fscn1+ Apol7c+ Dendritic cells"               "Intermediate monocytes"                       "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells"            
+#[22] "s100a9+/a8+ Granulocytes"                     "Ccl11+ Fibroblasts"                           "Plasma cells"                                
+#[25] "Mgp+ Aebp1+ Activated fibroblasts"            "Il1b+ Fibroblasts"                            "Mesothelial cells"                           
+#[28] "Notch3 high VSMCs"                            "MAST cells"                                   "Rgs5+ Endothelial cells"                     
+#[31] "Notch3 low VSMCs"                             "Pecam1+ Cd5+ Col1a1+ Lum+ cells"             
+
+Idents(TERVA2_harmony) <- "celltype"
+nb.cols <- 35
+mycolors <- colorRampPalette(colorBlindness::paletteMartin)(nb.cols)
+reannot <- DimPlot(TERVA2_harmony, pt.size = 1.2, cols = mycolors, order = F)
+reannot + 
+  labs(title = "Cell annotations of the integrated data") +
+  theme(plot.title = element_text(size=40, hjust= 0.5),
+        axis.title = element_text(size=20),
+        axis.text = element_text(size=20)
+        ) +
+  guides(col = guide_legend(ncol = 1))
+
+TERVA2_harmony <- AddModuleScore(TERVA2_harmony, features = list("Apoe",    "Lyz2",    "Cd74",    "C1qb",    "C1qc",    "C1qa",    "Ccl6",    "Ctsc",    "Gm46603", "H2-Aa",   "Fcer1g",  "F13a1",   "Tyrobp",  "H2-Ab1",  "Mrc1",    "H2-Eb1", 
+                                                                 "Retnla",  "C4b",     "Wfdc17",  "Mgp", "Cd248", "Pi16"), name = "Pi16fibro_topgenes")
+
+moduleplot <- FeaturePlot(TERVA2_harmony,
+            features = "Pi16fibro_topgenes22", label = F, repel = TRUE, pt.size = 1.2) +
+  theme(legend.text = element_text(size=15)) +
+  scale_colour_gradientn(colours = rev(brewer.pal(n = 11, name = "RdBu"))) + 
+  labs(title = "Module expression of top DE genes of PVAT-derived activated fibroblasts")
+
+reannot + labs(title = "Main cell populations and subclustering of the integrated data") + NoLegend() + moduleplot
+
+#The same as above but without the legend
+Idents(TERVA2_harmony) <- "celltype"
+reannot <- DimPlot(TERVA2_harmony, label = T, repel = T, label.box = T, label.color = "white", pt.size = 1.2, cols = mycolors, order = T) + NoLegend()
+reannot + 
+  labs(title = "Clustering of the integrated data") +
+  theme(plot.title = element_text(size=40, hjust= 0.5),
+        axis.title = element_text(size=20),
+        axis.text = element_text(size=20))
+
+reannot2 <- DimPlot(TERVA2_harmony, split.by = "tissue_id", pt.size = 1.2, cols = mycolors, order = T, label.color = "white", label.size = 1.5) + NoLegend()
+
+
+#Plot by group
+
+diseasestates <- DimPlot(TERVA2_harmony, reduction = "umap", group.by = "group_id", pt.size = 1.2, label = T, label.box =  T, label.color = "white", label.size = 4, repel = T, cols = c("#009292", "#490092")) + NoLegend()
+diseasestates
+
+((reannot + diseasestates) / (reannot2)) | clusterheatmap
+
+
+#Find DE genes between NOB and OB (across tissues)
+
+####  DE from the reannotated cell types DE between states ####
+
+#[1] "Vps37b+ Ramp3+ Cd8+ T memory cells"           "Natural killer cells"                         "Lef1+ Tcf7+ Cd4+ T cells"                    
+#[4] "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells"           "Innate lymphoid cells"                        "Gpihbp1+ Fabp4+ Endothelial cells"           
+#[7] "B cells"                                      "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages " "Classical and non-classical monocytes"       
+#[10] "Mki67+ Top2a+ Proliferating cells"            "Vascular smooth muscle cells"                 "Trem2+ Lgals3+ Macrophages"                  
+#[13] "Conventional Dendritic cells DC1"             "Cd248+ Pi16+ Fibroblasts"                     "Mfap4+ Fibroblasts"                          
+#[16] "Folr2+ Lyve1+ M2 Macrophages"                 "Pf4+ Retnla+ Macrophages"                     "Foxp3+ Regulatory T cells"                   
+#[19] "Fscn1+ Apol7c+ Dendritic cells"               "Intermediate monocytes"                       "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells"            
+#[22] "s100a9+/a8+ Granulocytes"                     "Ccl11+ Fibroblasts"                           "Plasma cells"                                
+#[25] "Mgp+ Aebp1+ Activated fibroblasts"            "Il1b+ Fibroblasts"                            "Mesothelial cells"                           
+#[28] "Notch3 high VSMCs"                            "MAST cells"                                   "Rgs5+ Endothelial cells"                     
+#[31] "Notch3 low VSMCs"                             "Pecam1+ Cd5+ Col1a1+ Lum+ cells"       
+
+Idents(TERVA2_harmony) <- "celltype.group"
+Vps37bRamp3Cd8Tmem <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-obese", verbose = FALSE)
+NK <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
+Lef1Tcf7Cd4Tcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
+Lef1Tcf7Cd8Tcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
+Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
+Foxp3RegTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
+ILC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
+Bcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
+Plasmacells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
+Macro_Trem2Lgals3 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-obese", verbose = FALSE)
+Macro_Folr2Lyve1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
+Macro_Pf4Retnla <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
+Macro_infl <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
+Mono_inter <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
+Mono_clandnc <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
+Conv_DC1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
+Migr_DC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
+Mki67Top2acells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
+Fibro_Pi16 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-obese", verbose = FALSE)
+Fibro_Ccl11 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-obese", verbose = FALSE)
+Fibro_Mgp <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-obese", verbose = FALSE)
+Fibro_Il1b <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Il1b+ Fibroblasts_Obese", ident.2 = "Il1b+ Fibroblasts_Non-obese", verbose = FALSE)
+Fibro_Mfap <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-obese", verbose = FALSE)
+s100a9_a8Granulocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
+Gpihbp1Fabp4EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
+Rgs5EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Obese", ident.2 = "Rgs5+ Endothelial cells_Non-obese", verbose = FALSE)
+VSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-obese", verbose = FALSE)
+Notch3lowVSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Notch3 low VSMCs_Obese", ident.2 = "Notch3 low VSMCs_Non-obese", verbose = FALSE)
+Notch3highVSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Notch3 high VSMCs_Obese", ident.2 = "Notch3 high VSMCs_Non-obese", verbose = FALSE)
+Mesothelialcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-obese", verbose = FALSE)
+MASTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-obese", verbose = FALSE)
+Pecam1Cd5Col1a1Lumcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Obese", ident.2 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Non-obese", verbose = FALSE)
+
+sctlist <- c("Vps37bRamp3Cd8Tmem", "NK", "Lef1Tcf7Cd4Tcells","Lef1Tcf7Cd8Tcells", "Cd8Ccl5Nkg7CytotoxicTcells", "Foxp3RegTcells", "ILC", "Bcells", "Plasmacells", "Macro_Folr2Lyve1", "Macro_Trem2Lgals3", "Macro_Pf4Retnla", "Macro_infl", "Mono_inter", "Mono_clandnc", "Conv_DC1", "Migr_DC", 
+             "Mki67Top2acells", "Fibro_Pi16", "Fibro_Ccl11", "Fibro_Mgp", "Fibro_Il1b", "Fibro_Mfap", "s100a9_a8Granulocytes", "Gpihbp1Fabp4EC", "Rgs5EC", "VSMCs", "Notch3lowVSMCs", "Notch3highVSMCs", "Mesothelialcells", "MASTcells", "Pecam1Cd5Col1a1Lumcells")
 
 for(i in 1:length(sctlist)) {                
   write.csv2(get(sctlist[i]),
@@ -749,39 +526,209 @@ for(i in 1:length(sctlist)) {
              row.names = TRUE)
 }
 
-AO_Macrophages_reannot$gene <- rownames(AO_Macrophages_reannot)
-AO_Macrophages_reannot_sub <- filter(AO_Macrophages_reannot, !str_detect(gene, "^Ig")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "Gm8797")) %>%
-  filter(!str_detect(gene, "Jchain"))
+# Visualization of DE genes between NOB and OB (across tissues)
 
-AO_ILC$gene <- rownames(AO_ILC)
-AO_ILC_sub <- filter(AO_ILC, !str_detect(gene, "^Ig")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "Gm8797")) %>%
-  filter(!str_detect(gene, "Jchain"))
 
-AO_Conv_DC2$gene <- rownames(AO_Conv_DC2)
-AO_Conv_DC2_sub <- filter(AO_Conv_DC2, !str_detect(gene, "^Ig")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "Gm8797")) %>%
-  filter(!str_detect(gene, "Jchain"))
+ev1 <- EnhancedVolcano(Fibro_Mgp,
+                       lab = rownames(Fibro_Mgp),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'DE profile of Mgp+ Fibroblasts',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
 
-AO_VSMCs_reannot$gene <- rownames(AO_VSMCs_reannot)
-AO_VSMCs_reannot_sub <- filter(AO_VSMCs_reannot, !str_detect(gene, "^mt")) %>%
-  filter(!str_detect(gene, "^Gm"))
+ev2 <- EnhancedVolcano(Fibro_Pi16,
+                       lab = rownames(Fibro_Pi16),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'DE profile of Pi16+ Fibroblasts',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
 
-AO_Cd8posT$gene <- rownames(AO_Cd8posT)
-AO_Cd8posT_sub <- filter(AO_Cd8posT, !str_detect(gene, "^Ig")) %>%
-  filter(!str_detect(gene, "Jchain")) %>%
-  filter(!str_detect(gene, "Gm8797"))
 
-AO_Cd4posT$gene <- rownames(AO_Cd4posT)
-AO_Cd4posT_sub <- filter(AO_Cd4posT, !str_detect(gene, "^Ig")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "^Rp")) %>%
-  filter(!str_detect(gene, "Jchain"))
-  
+ev3 <- EnhancedVolcano(Macro_Trem2Lgals3,
+                       lab = rownames(Macro_Trem2Lgals3),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'DE profile of Trem2+ Lgals3+ Macrophages',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+
+ev4 <- EnhancedVolcano(Macro_Folr2Lyve1,
+                       lab = rownames(Macro_Folr2Lyve1),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'DE profile of Folr2+ Lyve1+ Macrophages',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev5 <- EnhancedVolcano(Macro_Pf4Retnla,
+                       lab = rownames(Macro_Pf4Retnla),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'DE profile of Pf4+ Retnla+ Macrophages',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev6 <- EnhancedVolcano(Mono_inter,
+                       lab = rownames(Mono_inter),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'DE profile of Intermediate monocytes',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev7 <- EnhancedVolcano(Vps37bRamp3Cd8Tmem,
+                       lab = rownames(Vps37bRamp3Cd8Tmem),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'DE profile of Cd8+ T memory cells',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+ev8 <- EnhancedVolcano(Migr_DC,
+                       lab = rownames(Migr_DC),
+                       x = 'avg_log2FC',
+                       y = 'p_val_adj',
+                       title = 'DE profile of Migratory DCs',
+                       pCutoff = 1e-2,
+                       FCcutoff = 0.4,
+                       pointSize = 3.0,
+                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                       labSize = 6.0,
+                       titleLabSize = 15.0)
+
+(ev1+ev2+ev3+ev4)|(ev5+ev6+ev7+ev8)
+
+(ev1+ev2)/(ev3+ev4)
+
+#### GSEA analysis with clusterProfiler ####
+
+library(clusterProfiler, lib.loc = "/appl/soft/math/r-env/421/421-rpackages")
+library(biomaRt)
+library(org.Mm.eg.db)
+
+#Set the genes in analysis as the background. 
+background <- rownames(TERVA2_harmony@assays$RNA@counts)
+
+#Cut off genes which have a adjusted p-value bigger than 0.05 
+cutoff_p <- function(x) { #function to do the pruning
+  genes <- subset(x, p_val_adj < 0.05)
+  return(genes)
+}
+
+Mgp_fibr <- cutoff_p(Fibro_Mgp)
+Pi16_fibr <- cutoff_p(Fibro_Pi16)
+lgals3 <- cutoff_p(Macro_Trem2Lgals3)
+lyve <- cutoff_p(Macro_Folr2Lyve1)
+
+# use bitr to obtain Entrez IDs
+
+gene <- rownames(lgals3)
+gene.go <- bitr(gene, fromType = "SYMBOL",
+                toType = "ENTREZID",
+                OrgDb = org.Mm.eg.db)
+
+eGO <- enrichGO(gene          = gene.go$ENTREZID,
+                OrgDb         = org.Mm.eg.db,
+                universe = rownames(background),
+                pAdjustMethod = "fdr",
+                pvalueCutoff  = 0.01)
+#head(summary(eGO))
+go1<- dotplot(eGO, showCategory=30) + 
+  ggtitle("Enriched GO terms for Mgp+ fibroblasts") + scale_y_discrete(labels=function(x) str_wrap(x, width=40))
+go2<- dotplot(eGO, showCategory=30) + 
+  ggtitle("Enriched GO terms for Pi16+ fibroblasts") + scale_y_discrete(labels=function(x) str_wrap(x, width=40))
+go3<- dotplot(eGO, showCategory=30) + 
+  ggtitle("Enriched GO terms for Trem2+ Lgals3+ Macrophages") + scale_y_discrete(labels=function(x) str_wrap(x, width=40))
+go4<- dotplot(eGO, showCategory=30) + 
+  ggtitle("Enriched GO terms for Folr2+ Lyve1+ Macrophages") + scale_y_discrete(labels=function(x) str_wrap(x, width=40))
+
+go1 + go2 + go3 + go4
+
+
+#### Tissue specific analyses ####
+
+Idents(TERVA2_harmony) <- "tissue_id"
+AO <- subset(TERVA2_harmony, idents = "Aorta")
+PVAT <- subset(TERVA2_harmony, idents = "PVAT")
+eWAT <- subset(TERVA2_harmony, idents = "eWAT")
+Spleen <- subset(TERVA2_harmony, idents = "Spleen")
+
+
+#### Aorta ####
+
+# AO OB vs NOB DE's per cell type ####
+Idents(AO) <- "celltype.group"
+AO_Vps37bRamp3Cd8Tmem <- FindMarkers(AO, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-obese", verbose = FALSE)
+AO_NK <- FindMarkers(AO, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
+AO_Lef1Tcf7Cd4Tcells <- FindMarkers(AO, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
+AO_Lef1Tcf7Cd8Tcells <- FindMarkers(AO, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
+AO_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(AO, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
+AO_Foxp3RegTcells <- FindMarkers(AO, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
+AO_ILC <- FindMarkers(AO, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
+AO_Bcells <- FindMarkers(AO, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
+AO_Plasmacells <- FindMarkers(AO, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
+AO_Macro_Folr2Lyve1 <- FindMarkers(AO, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
+AO_Macro_Trem2Lgals3 <- FindMarkers(AO, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-obese", verbose = FALSE)
+AO_Macro_Pf4Retnla <- FindMarkers(AO, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
+AO_Macro_infl <- FindMarkers(AO, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
+AO_Mono_inter <- FindMarkers(AO, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
+AO_Mono_clandnc <- FindMarkers(AO, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
+AO_Conv_DC1 <- FindMarkers(AO, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
+AO_Migr_DC <- FindMarkers(AO, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
+AO_Mki67Top2acells <- FindMarkers(AO, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
+AO_Fibro_Pi16 <- FindMarkers(AO, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-obese", verbose = FALSE)
+AO_Fibro_Ccl11 <- FindMarkers(AO, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-obese", verbose = FALSE)
+AO_Fibro_Mgp <- FindMarkers(AO, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-obese", verbose = FALSE)
+AO_Fibro_Mfap <- FindMarkers(AO, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-obese", verbose = FALSE)
+AO_s100a9_a8Granulocytes <- FindMarkers(AO, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
+AO_Gpihbp1Fabp4EC <- FindMarkers(AO, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
+AO_VSMCs <- FindMarkers(AO, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-obese", verbose = FALSE)
+
+
+sctlist <- c("AO_Vps37bRamp3Cd8Tmem", "AO_NK", "AO_Lef1Tcf7Cd4Tcells", "AO_Lef1Tcf7Cd8Tcells", "AO_Cd8Ccl5Nkg7CytotoxicTcells", "AO_Foxp3RegTcells", "AO_ILC", "AO_Bcells", "AO_Plasmacells",
+             "AO_Macro_Folr2Lyve1", "AO_Macro_Trem2Lgals3", "AO_Macro_Pf4Retnla", "AO_Macro_infl", "AO_Mono_inter", "AO_Mono_clandnc", "AO_Conv_DC1", "AO_Migr_DC", "AO_Mki67Top2acells", "AO_Fibro_Pi16",
+             "AO_Fibro_Ccl11", "AO_Fibro_Mgp", "AO_Fibro_Mfap", "AO_s100a9_a8Granulocytes", "AO_Gpihbp1Fabp4EC", "AO_VSMCs")
+
+for(i in 1:length(sctlist)) {                
+  write.csv2(get(sctlist[i]),
+             paste("/scratch/project_2005050/Rstats/",
+                   sctlist[i],
+                   ".csv"),
+             row.names = TRUE)
+}
+
+
 
 DimPlot(AO, reduction = "umap", label = T , repel = T, label.size = 3) + NoLegend()
 
@@ -804,7 +751,7 @@ V1<-EnhancedVolcano(AO_Bcells_reannot,
                 lab = rownames(AO_Bcells_reannot),
                 x = 'avg_log2FC',
                 y = 'p_val_adj',
-                title = 'Late disease vs Prelesion in aorta B cells',
+                title = 'Obese vs Non-obese in aorta B cells',
                 pCutoff = 5e-2,
                 FCcutoff = 0.4,
                 pointSize = 3.0,
@@ -816,7 +763,7 @@ V2<-EnhancedVolcano(AO_Macrophages_Lgals3_reannot,
                     lab = rownames(AO_Macrophages_Lgals3_reannot),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in aorta Lgals3+ macrophages',
+                    title = 'Obese vs Non-obese in aorta Lgals3+ macrophages',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -828,7 +775,7 @@ V3<-EnhancedVolcano(AO_Macrophages_reannot_sub,
                     lab = rownames(AO_Macrophages_reannot_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in aorta macrophages',
+                    title = 'Obese vs Non-obese in aorta macrophages',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -840,7 +787,7 @@ V4<-EnhancedVolcano(AO_ILC_sub,
                     lab = rownames(AO_ILC_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in aorta ILCs',
+                    title = 'Obese vs Non-obese in aorta ILCs',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -852,7 +799,7 @@ V5<-EnhancedVolcano(AO_Conv_DC2_sub,
                     lab = rownames(AO_Conv_DC2_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in aorta conventional DC2s',
+                    title = 'Obese vs Non-obese in aorta conventional DC2s',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -864,7 +811,7 @@ V6<-EnhancedVolcano(AO_Cd8posT_sub,
                     lab = rownames(AO_Cd8posT_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in aorta Cd8+ T cells',
+                    title = 'Obese vs Non-obese in aorta Cd8+ T cells',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -876,7 +823,7 @@ V4<-EnhancedVolcano(AO_Cd4posT_sub,
                               lab = rownames(AO_Cd4posT_sub),
                               x = 'avg_log2FC',
                               y = 'p_val_adj',
-                              title = 'Late disease vs Prelesion in aorta Cd4+ T cells',
+                              title = 'Obese vs Non-obese in aorta Cd4+ T cells',
                               pCutoff = 5e-2,
                               FCcutoff = 0.4,
                               pointSize = 3.0,
@@ -939,132 +886,46 @@ DoHeatmap(eWAT_ECs, features = top10$gene) + NoLegend()
 
 VlnPlot(eWAT_ECs, features = "nFeature_RNA", group.by = "RNA_snn_res.0.2")
 
-#### Mouse WAT atlas ####
-
-WAT_meta <- read_tsv("/scratch/project_2005050/Rstats/mouse_WAT_atlas/metadata.tsv")
-WAT_atlas <- Read10X("/scratch/project_2005050/Rstats/mouse_WAT_atlas/")
-
-WAT_atlas <- AddMetaData(WAT_atlas, WAT_meta$cell_type__custom, col.name = "celltype")
-WAT_atlas <- AddMetaData(WAT_atlas, WAT_meta$cell_subtype__custom, col.name = "celltype_sub")
-unique(WAT_atlas@meta.data$celltype)
-
-#The data set is massive and Puhti will run out of memory when scaling so subset here
-Idents(WAT_atlas) <- "celltype"
-WAT_sub <- subset(WAT_atlas, idents = c("endothelial", "pericyte", "male_epithelial"))
-
-Idents(WAT_sub) <- "orig.ident"
-WAT_sub <- WAT_sub %>% 
-  NormalizeData() %>%
-  ScaleData() %>%
-  FindVariableFeatures(nfeatures = 3000, selection.method = "vst")
-WAT_sub <- RunPCA(WAT_sub)
-ElbowPlot(WAT_sub)
-
-WAT_sub <- RunUMAP(WAT_sub, reduction = "pca", dims = 1:20) %>% 
-  FindNeighbors(dims = 1:20)
-resolution.range <- seq(from = 0, to = 1, by = 0.1)
-WAT_sub <- FindClusters(WAT_sub, resolution = resolution.range)
-clustree(WAT_sub) #Based on this I'd use res 0.3
-
-WAT_sub <- FindClusters(WAT_sub, res = 0.3)
-
-WAT_clusters <- DimPlot(WAT_sub, reduction = "umap", group.by = "seurat_clusters", pt.size = 1.2, label = T , repel = T, label.size = 4) + ggtitle("WAT atlas")
-WAT_celltypes <- DimPlot(WAT_sub, reduction = "umap", group.by = "celltype", pt.size = 1.2, label = T , repel = T, label.size = 4) + ggtitle("WAT atlas")
-WAT_subtypes <- DimPlot(WAT_sub, reduction = "umap", group.by = "celltype_sub", pt.size = 1.2, label = T , repel = T, label.size = 4) + ggtitle("WAT atlas")
-WAT_clusters | WAT_celltypes | WAT_subtypes
-
-
-WAT_atlas.anchors <- FindTransferAnchors(reference = WAT_sub, query = eWAT_ECs, 
-                                        dims = 1:30)
-predictions <- TransferData(anchorset = WAT_atlas.anchors, refdata = WAT_sub$celltype_sub, 
-                            dims = 1:30)
-eWAT.query <- AddMetaData(eWAT_ECs, metadata = predictions)
-
-eWAT.query <- FindClusters(eWAT.query, resolution = 0.4)
-
-Idents(eWAT.query) <- "RNA_snn_res.0.2"
-orig <- DimPlot(eWAT.query, reduction = "umap", group.by = "RNA_snn_res.0.2", pt.size = 1.2, label = T , repel = T, label.size = 4) + ggtitle("eWAT EC's reclustered")
-Idents(eWAT.query) <- "predicted.id"
-celltype <- DimPlot(eWAT.query, reduction = "umap", group.by = "predicted.id", pt.size = 1.2, label = T , repel = T, label.size = 4)  + ggtitle("eWAT EC's reclustered")
-Idents(eWAT.query) <- "celltype"
-celltype_orig <- DimPlot(eWAT.query, reduction = "umap", group.by = "celltype", pt.size = 1.2, label = T , repel = T, label.size = 4)  + ggtitle("eWAT EC's reclustered")
-
-
-orig | celltype | celltype_orig
-
-## With eWAT EC data that hasn't been reclustered
-
-WAT_atlas.anchors <- FindTransferAnchors(reference = WAT_sub, query = eWAT_ECs, 
-                                         dims = 1:30)
-predictions <- TransferData(anchorset = WAT_atlas.anchors, refdata = WAT_sub$celltype_sub, 
-                            dims = 1:30)
-eWAT_ECs.query <- AddMetaData(eWAT_ECs, metadata = predictions)
-
-Idents(eWAT_ECs.query) <- "predicted.id"
-celltype_T <- DimPlot(eWAT_ECs.query, reduction = "umap", group.by = "predicted.id", pt.size = 1.2, label = T , repel = T, label.size = 4)  + ggtitle("eWAT EC's")
-
-celltype_T
-
-
-
-
-
 
 
 
 ####
 
 Idents(eWAT) <- "celltype.group"
-eWAT_Tcellresponse <- FindMarkers(eWAT, only.pos = T, ident.1 = "T cells_Late_disease", ident.2 = "T cells_Prelesion", verbose = FALSE)
+eWAT_Vps37bRamp3Cd8Tmem <- FindMarkers(eWAT, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-obese", verbose = FALSE)
+eWAT_NK <- FindMarkers(eWAT, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
+eWAT_Lef1Tcf7Cd4Tcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
+eWAT_Lef1Tcf7Cd8Tcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
+eWAT_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
+eWAT_Foxp3RegTcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
+eWAT_ILC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
+eWAT_Bcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
+eWAT_Plasmacells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
+eWAT_Macro_Folr2Lyve1 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
+eWAT_Macro_Trem2Lgals3 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-obese", verbose = FALSE)
+eWAT_Macro_Pf4Retnla <- FindMarkers(eWAT, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
+eWAT_Macro_infl <- FindMarkers(eWAT, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
+eWAT_Mono_inter <- FindMarkers(eWAT, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
+eWAT_Mono_clandnc <- FindMarkers(eWAT, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
+eWAT_Conv_DC1 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
+eWAT_Migr_DC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
+eWAT_Mki67Top2acells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
+eWAT_Fibro_Pi16 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-obese", verbose = FALSE)
+eWAT_Fibro_Ccl11 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-obese", verbose = FALSE)
+eWAT_Fibro_Mgp <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-obese", verbose = FALSE)
+eWAT_Fibro_Il1b <- FindMarkers(eWAT, only.pos = F, ident.1 = "Il1b+ Fibroblasts_Obese", ident.2 = "Il1b+ Fibroblasts_Non-obese", verbose = FALSE)
+eWAT_Fibro_Mfap <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-obese", verbose = FALSE)
+eWAT_s100a9_a8Granulocytes <- FindMarkers(eWAT, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
+eWAT_Gpihbp1Fabp4EC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
+eWAT_Rgs5EC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Obese", ident.2 = "Rgs5+ Endothelial cells_Non-obese", verbose = FALSE)
+eWAT_VSMCs <- FindMarkers(eWAT, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-obese", verbose = FALSE)
+eWAT_Mesothelialcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-obese", verbose = FALSE)
+eWAT_Pecam1Cd5Col1a1Lumcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Obese", ident.2 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Non-obese", verbose = FALSE)
 
-eWAT_Bcellresponse <- FindMarkers(eWAT, only.pos = T, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
-
-eWAT_NKcresponse <- FindMarkers(eWAT, only.pos = T, ident.1 = "NK cells_Late_disease", ident.2 = "NK cells_Prelesion", verbose = FALSE)
-
-eWAT_Macrophageresponse <- FindMarkers(eWAT, only.pos = T, ident.1 = "Macrophages activated_Late_disease", ident.2 = "Macrophages activated_Prelesion", verbose = FALSE)
-eWAT_Macrophageresponse2 <- FindMarkers(eWAT, only.pos = T, ident.1 = "Macrophages_Late_disease", ident.2 = "Macrophages_Prelesion", verbose = FALSE)
-
-eWAT_Monocyteresponse <- FindMarkers(eWAT, only.pos = T, ident.1 = "Monocytes_Late_disease", ident.2 = "Monocytes_Prelesion", verbose = FALSE)
-
-eWAT_Granulocyteresponse <- FindMarkers(eWAT, only.pos = T, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
-
-FeaturePlot(eWAT, features = c("Slc7a7", "Trem2", "Ly6a"), split.by = "group_id") #Rag1 not expressed in eWAT cells 
-
-Idents(eWAT) <- "celltype.group"
-eWAT_Cd4posT <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd4+ Tcells_Late_disease", ident.2 = "Cd4+ Tcells_Prelesion", verbose = FALSE)
-eWAT_NK <- FindMarkers(eWAT, only.pos = F, ident.1 = "NK's_Late_disease", ident.2 = "NK's_Prelesion", verbose = FALSE)
-eWAT_Cd8posT <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd8+ Tcells_Late_disease", ident.2 = "Cd8+ Tcells_Prelesion", verbose = FALSE)
-eWAT_Cd8posCcl5posTeff <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd8+ Ccl5+ Teffs_Late_disease", ident.2 = "Cd8+ Ccl5+ Teffs_Prelesion", verbose = FALSE)
-eWAT_Cd4Foposxp3posTreg <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd4+ Foxp3+ Tregs_Late_disease", ident.2 = "Cd4+ Foxp3+ Tregs_Prelesion", verbose = FALSE)
-#MemBcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Memory B cells ?_Late_disease", ident.2 = "Memory B cells ?_Prelesion", verbose = FALSE)
-eWAT_Bcells_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
-eWAT_Macrophagesact_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Macrophages activated_Late_disease", ident.2 = "Macrophages activated_Prelesion", verbose = FALSE)
-eWAT_Plasmacells_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Plasma cells ?_Late_disease", ident.2 = "Plasma cells ?_Prelesion", verbose = FALSE)
-eWAT_Dividing <- FindMarkers(eWAT, only.pos = F, ident.1 = "Dividing cells_Late_disease", ident.2 = "Dividing cells_Prelesion", verbose = FALSE)
-eWAT_Fibro_Pi16 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Pi16+ Fibroblasts_Late_disease", ident.2 = "Pi16+ Fibroblasts_Prelesion", verbose = FALSE)
-eWAT_Fibroblasts_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Fibroblasts_Late_disease", ident.2 = "Fibroblasts_Prelesion", verbose = FALSE)
-#eWAT_Fibro_Mgp_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mgp+ Fibroblasts_Late_disease", ident.2 = "Mgp+ Fibroblasts_Prelesion", verbose = FALSE)
-eWAT_Fibroact_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Fibroblasts activated_Late_disease", ident.2 = "Fibroblasts activated_Prelesion", verbose = FALSE)
-eWAT_Macrophages_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Macrophages_Late_disease", ident.2 = "Macrophages_Prelesion", verbose = FALSE)
-eWAT_Macrophages_Lgals3_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Lgals3+ Macrophages_Late_disease", ident.2 = "Lgals3+ Macrophages_Prelesion", verbose = FALSE)
-eWAT_Int_monocytes <- FindMarkers(eWAT, only.pos = F, ident.1 = "Intermediate monocytes_Late_disease", ident.2 = "Intermediate monocytes_Prelesion", verbose = FALSE)
-eWAT_ILC <- FindMarkers(eWAT, only.pos = F, ident.1 = "ILC's_Late_disease", ident.2 = "ILC's_Prelesion", verbose = FALSE)
-#NKcellsandorILC2 <- FindMarkers(eWAT, only.pos = F, ident.1 = "NKcells and ILC2's?_Late_disease", ident.2 = "NKcells and ILC2's?_Prelesion", verbose = FALSE)
-eWAT_Conv_DC2 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Conv DC2_Late_disease", ident.2 = "Conv DC2_Prelesion", verbose = FALSE)
-eWAT_Class_monocytes <- FindMarkers(eWAT, only.pos = F, ident.1 = "Classical and non-classical Monocytes_Late_disease", ident.2 = "Classical and non-classical Monocytes_Prelesion", verbose = FALSE)
-eWAT_Granulocytes_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
-eWAT_Conv_DC1 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Conv DC1_Late_disease", ident.2 = "Conv DC1_Prelesion", verbose = FALSE)
-#Nonclass_monocytes <- FindMarkers(eWAT, only.pos = F, ident.1 = "Non-classical monocytes_Late_disease", ident.2 = "Non-classical monocytes_Prelesion", verbose = FALSE)
-eWAT_Endothelialcells_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Endothelial cells_Late_disease", ident.2 = "Endothelial cells_Prelesion", verbose = FALSE)
-eWAT_EC_rgs5_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Rgs5+ EC's_Late_disease", ident.2 = "Rgs5+ EC's_Prelesion", verbose = FALSE)
-eWAT_VSMCs_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "VSMC's_Late_disease", ident.2 = "VSMC's_Prelesion", verbose = FALSE)
-eWAT_MAST_reannot <- FindMarkers(eWAT, only.pos = F, ident.1 = "Hdc+ Cpa3+ MAST cells_Late_disease", ident.2 = "Hdc+ Cpa3+ MAST cells_Prelesion", verbose = FALSE)
-
-
-sctlist <- c("eWAT_Cd4posT", "eWAT_Cd8posT", "eWAT_NK", "eWAT_Cd8posCcl5posTeff", "eWAT_Cd4Foposxp3posTreg", "eWAT_Bcells_reannot", "eWAT_Macrophagesact_reannot", "eWAT_Plasmacells_reannot", "eWAT_Dividing", "eWAT_Fibro_Pi16", 
-             "eWAT_Fibroblasts_reannot", "eWAT_Fibroact_reannot", "eWAT_Macrophages_reannot", "eWAT_Macrophages_Lgals3_reannot", "eWAT_Int_monocytes", "eWAT_ILC", "eWAT_Conv_DC2", "eWAT_Class_monocytes", 
-             "eWAT_Granulocytes_reannot", "eWAT_Conv_DC1", "eWAT_Endothelialcells_reannot", "eWAT_EC_rgs5_reannot", "eWAT_VSMCs_reannot", "eWAT_MAST_reannot")
-
+sctlist <- c("eWAT_Vps37bRamp3Cd8Tmem", "eWAT_NK", "eWAT_Lef1Tcf7Cd4Tcells", "eWAT_Lef1Tcf7Cd8Tcells", "eWAT_Cd8Ccl5Nkg7CytotoxicTcells", "eWAT_Foxp3RegTcells", "eWAT_ILC", "eWAT_Bcells", "eWAT_Plasmacells",
+             "eWAT_Macro_Folr2Lyve1", "eWAT_Macro_Trem2Lgals3", "eWAT_Macro_Pf4Retnla", "eWAT_Macro_infl", "eWAT_Mono_inter", "eWAT_Mono_clandnc", "eWAT_Conv_DC1", "eWAT_Migr_DC", "eWAT_Mki67Top2acells",
+             "eWAT_Fibro_Pi16", "eWAT_Fibro_Ccl11", "eWAT_Fibro_Mgp", "eWAT_Fibro_Il1b", "eWAT_Fibro_Mfap", "eWAT_s100a9_a8Granulocytes", "eWAT_Gpihbp1Fabp4EC", "eWAT_Rgs5EC", "eWAT_VSMCs", "eWAT_Mesothelialcells", 
+             "eWAT_Pecam1Cd5Col1a1Lumcells")
 
 for(i in 1:length(sctlist)) {                
   write.csv2(get(sctlist[i]),
@@ -1074,18 +935,42 @@ for(i in 1:length(sctlist)) {
              row.names = TRUE)
 }
 
-eWAT_Int_monocytes$gene <- rownames(eWAT_Int_monocytes)
-eWAT_Int_monocytes_sub <- filter(eWAT_Int_monocytes, !str_detect(gene, "^mt")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "Gm42418"))
+#### eWAT clusterprofiler ####
+background <- rownames(eWAT@assays$RNA@counts)
 
-eWAT_Macrophages_Lgals3_reannot$gene <- rownames(eWAT_Macrophages_Lgals3_reannot)
-eWAT_Macrophages_Lgals3_reannot_sub <- filter(eWAT_Macrophages_Lgals3_reannot, !str_detect(gene, "^mt")) %>%
-  filter(!str_detect(gene, "^Rp")) %>%
-  filter(!str_detect(gene, "^Gm"))
+#Cut off genes which have a adjusted p-value bigger than 0.05 
+cutoff_p <- function(x) { #function to do the pruning
+  genes <- subset(x, p_val_adj < 0.05)
+  return(genes)
+}
 
-eWAT_EC_rgs5_reannot$gene <- rownames(eWAT_EC_rgs5_reannot)
-eWAT_EC_rgs5_reannot_sub <- filter(eWAT_EC_rgs5_reannot, !str_detect(gene, "^Rp"))
+Mgp_fibr <- cutoff_p(eWAT_Fibro_Mgp)
+lgals3 <- cutoff_p(eWAT_Macro_Trem2Lgals3)
+monoint <- cutoff_p(eWAT_Mono_inter)
+
+# use bitr to obtain Entrez IDs
+
+gene <- rownames(monoint)
+gene.go <- bitr(gene, fromType = "SYMBOL",
+                toType = "ENTREZID",
+                OrgDb = org.Mm.eg.db)
+
+eGO <- enrichGO(gene          = gene.go$ENTREZID,
+                OrgDb         = org.Mm.eg.db,
+                universe = rownames(background),
+                pAdjustMethod = "fdr",
+                pvalueCutoff  = 0.01)
+#head(summary(eGO))
+go1<- dotplot(eGO, showCategory=30) + 
+  ggtitle("Enriched GO terms for eWAT Mgp+ fibroblasts") + scale_y_discrete(labels=function(x) str_wrap(x, width=40))
+go2<- dotplot(eGO, showCategory=30) + 
+  ggtitle("Enriched GO terms for eWAT Trem2+ Lgals3+ Macrophages") + scale_y_discrete(labels=function(x) str_wrap(x, width=40))
+go3<- dotplot(eGO, showCategory=30) + 
+  ggtitle("Enriched GO terms for eWAT Intermediate monocytes") + scale_y_discrete(labels=function(x) str_wrap(x, width=40))
+
+go1 + go2 + go3
+
+
 
 
 topgenes <- c("Plac8", "Ccl4", "Fabp4", "Ly6e", "Mfge8", "Gpnmb", "Trem2", "Cd74", "Apoe", "Lyz2", "Retnla", "H2-Ab1", "H2-Eb1", "Cxcl2")
@@ -1096,11 +981,22 @@ D2 <- DotPlot(eWAT, features = topgenes, idents = cells) +
   RotatedAxis() +
   ggtitle("eWAT")
 
-V1<-EnhancedVolcano(eWAT_Int_monocytes_sub,
-                    lab = rownames(eWAT_Int_monocytes_sub),
+
+lapply(X, function(p){
+  EnhancedVolcano(p, lab = rownames(p), x = 'avg_log2FC', y = 'p_val_adj', title = 'DE profile of',
+                  pCutoff = 5e-2,
+                  FCcutoff = 0.4,
+                  pointSize = 3.0,
+                  col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                  labSize = 6.0,
+                  titleLabSize = 15.0)
+})
+
+V1<-EnhancedVolcano(eWAT_Fibro_Mgp,
+                    lab = rownames(eWAT_Fibro_Mgp),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in eWAT intermediate monocytes',
+                    title = 'DE profile of eWAT Mgp+ Fibroblasts',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1108,11 +1004,11 @@ V1<-EnhancedVolcano(eWAT_Int_monocytes_sub,
                     labSize = 6.0,
                     titleLabSize = 15.0)
 
-V2<-EnhancedVolcano(eWAT_Macrophages_Lgals3_reannot_sub,
-                    lab = rownames(eWAT_Macrophages_Lgals3_reannot_sub),
+V2<-EnhancedVolcano(eWAT_Macro_Trem2Lgals3,
+                    lab = rownames(eWAT_Macro_Trem2Lgals3),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in eWAT Lgals3+ macrophages',
+                    title = 'DE profile of eWAT Lgals3+ macrophages',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1120,11 +1016,11 @@ V2<-EnhancedVolcano(eWAT_Macrophages_Lgals3_reannot_sub,
                     labSize = 6.0,
                     titleLabSize = 15.0)
 
-V3<-EnhancedVolcano(eWAT_EC_rgs5_reannot_sub,
-                    lab = rownames(eWAT_EC_rgs5_reannot_sub),
+V3<-EnhancedVolcano(eWAT_Mono_inter,
+                    lab = rownames(eWAT_Mono_inter),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in eWAT Rgs5+ endothelial cells',
+                    title = 'Obese vs Non-obese in eWAT Intermediate monocytes',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1150,41 +1046,40 @@ RidgePlot(macros_PVAT, group.by = "group_id", features = c("Trem2", "Lgals3"))
 
 
 Idents(PVAT) <- "celltype.group"
+PVAT_Vps37bRamp3Cd8Tmem <- FindMarkers(PVAT, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-obese", verbose = FALSE)
+PVAT_NK <- FindMarkers(PVAT, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
+PVAT_Lef1Tcf7Cd4Tcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
+PVAT_Lef1Tcf7Cd8Tcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
+PVAT_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
+PVAT_Foxp3RegTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
+PVAT_ILC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
+PVAT_Bcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
+PVAT_Plasmacells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
+PVAT_Macro_Folr2Lyve1 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
+PVAT_Macro_Trem2Lgals3 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-obese", verbose = FALSE)
+PVAT_Macro_Pf4Retnla <- FindMarkers(PVAT, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
+PVAT_Macro_infl <- FindMarkers(PVAT, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
+PVAT_Mono_inter <- FindMarkers(PVAT, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
+PVAT_Mono_clandnc <- FindMarkers(PVAT, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
+PVAT_Conv_DC1 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
+PVAT_Migr_DC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
+PVAT_Mki67Top2acells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
+PVAT_Fibro_Pi16 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-obese", verbose = FALSE)
+PVAT_Fibro_Ccl11 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-obese", verbose = FALSE)
+PVAT_Fibro_Mgp <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-obese", verbose = FALSE)
+PVAT_Fibro_Mfap <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-obese", verbose = FALSE)
+PVAT_s100a9_a8Granulocytes <- FindMarkers(PVAT, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
+PVAT_Gpihbp1Fabp4EC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
+PVAT_VSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-obese", verbose = FALSE)
+PVAT_Notch3lowVSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Notch3 low VSMCs_Obese", ident.2 = "Notch3 low VSMCs_Non-obese", verbose = FALSE)
+PVAT_Notch3highVSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Notch3 high VSMCs_Obese", ident.2 = "Notch3 high VSMCs_Non-obese", verbose = FALSE)
+PVAT_Mesothelialcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-obese", verbose = FALSE)
+PVAT_MASTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-obese", verbose = FALSE)
 
-PVAT_Cd4posT <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd4+ Tcells_Late_disease", ident.2 = "Cd4+ Tcells_Prelesion", verbose = FALSE)
-PVAT_NK <- FindMarkers(PVAT, only.pos = F, ident.1 = "NK's_Late_disease", ident.2 = "NK's_Prelesion", verbose = FALSE)
-PVAT_Cd8posT <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd8+ Tcells_Late_disease", ident.2 = "Cd8+ Tcells_Prelesion", verbose = FALSE)
-PVAT_Cd8posCcl5posTeff <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd8+ Ccl5+ Teffs_Late_disease", ident.2 = "Cd8+ Ccl5+ Teffs_Prelesion", verbose = FALSE)
-PVAT_Cd4Foposxp3posTreg <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd4+ Foxp3+ Tregs_Late_disease", ident.2 = "Cd4+ Foxp3+ Tregs_Prelesion", verbose = FALSE)
-#MemBcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Memory B cells ?_Late_disease", ident.2 = "Memory B cells ?_Prelesion", verbose = FALSE)
-PVAT_Bcells_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
-PVAT_Macrophagesact_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Macrophages activated_Late_disease", ident.2 = "Macrophages activated_Prelesion", verbose = FALSE)
-PVAT_Plasmacells_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Plasma cells ?_Late_disease", ident.2 = "Plasma cells ?_Prelesion", verbose = FALSE)
-PVAT_Dividing <- FindMarkers(PVAT, only.pos = F, ident.1 = "Dividing cells_Late_disease", ident.2 = "Dividing cells_Prelesion", verbose = FALSE)
-PVAT_Fibro_Pi16 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Pi16+ Fibroblasts_Late_disease", ident.2 = "Pi16+ Fibroblasts_Prelesion", verbose = FALSE)
-PVAT_Fibroblasts_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Fibroblasts_Late_disease", ident.2 = "Fibroblasts_Prelesion", verbose = FALSE)
-PVAT_Fibro_Mgp_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mgp+ Fibroblasts_Late_disease", ident.2 = "Mgp+ Fibroblasts_Prelesion", verbose = FALSE)
-PVAT_Fibroact_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Fibroblasts activated_Late_disease", ident.2 = "Fibroblasts activated_Prelesion", verbose = FALSE)
-PVAT_Macrophages_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Macrophages_Late_disease", ident.2 = "Macrophages_Prelesion", verbose = FALSE)
-PVAT_Macrophages_Lgals3_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Lgals3+ Macrophages_Late_disease", ident.2 = "Lgals3+ Macrophages_Prelesion", verbose = FALSE)
-PVAT_Int_monocytes <- FindMarkers(PVAT, only.pos = F, ident.1 = "Intermediate monocytes_Late_disease", ident.2 = "Intermediate monocytes_Prelesion", verbose = FALSE)
-PVAT_ILC <- FindMarkers(PVAT, only.pos = F, ident.1 = "ILC's_Late_disease", ident.2 = "ILC's_Prelesion", verbose = FALSE)
-#NKcellsandorILC2 <- FindMarkers(PVAT, only.pos = F, ident.1 = "NKcells and ILC2's?_Late_disease", ident.2 = "NKcells and ILC2's?_Prelesion", verbose = FALSE)
-PVAT_Conv_DC2 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Conv DC2_Late_disease", ident.2 = "Conv DC2_Prelesion", verbose = FALSE)
-PVAT_Class_monocytes <- FindMarkers(PVAT, only.pos = F, ident.1 = "Classical and non-classical Monocytes_Late_disease", ident.2 = "Classical and non-classical Monocytes_Prelesion", verbose = FALSE)
-PVAT_Granulocytes_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
-PVAT_Conv_DC1 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Conv DC1_Late_disease", ident.2 = "Conv DC1_Prelesion", verbose = FALSE)
-#Nonclass_monocytes <- FindMarkers(PVAT, only.pos = F, ident.1 = "Non-classical monocytes_Late_disease", ident.2 = "Non-classical monocytes_Prelesion", verbose = FALSE)
-PVAT_Endothelialcells_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Endothelial cells_Late_disease", ident.2 = "Endothelial cells_Prelesion", verbose = FALSE)
-PVAT_EC_rgs5_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Late_disease", ident.2 = "Rgs5+ Endothelial cells_Prelesion", verbose = FALSE)
-PVAT_VSMCs_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "VSMC's_Late_disease", ident.2 = "VSMC's_Prelesion", verbose = FALSE)
-PVAT_MAST_reannot <- FindMarkers(PVAT, only.pos = F, ident.1 = "Hdc+ Cpa3+ MAST cells_Late_disease", ident.2 = "Hdc+ Cpa3+ MAST cells_Prelesion", verbose = FALSE)
 
-
-sctlist <- c("PVAT_Cd4posT", "PVAT_Cd8posT", "PVAT_NK", "PVAT_Cd8posCcl5posTeff", "PVAT_Cd4Foposxp3posTreg", "PVAT_Bcells_reannot", "PVAT_Macrophagesact_reannot", "PVAT_Plasmacells_reannot", "PVAT_Dividing", "PVAT_Fibro_Pi16", 
-             "PVAT_Fibroblasts_reannot", "PVAT_Fibroact_reannot","PVAT_Fibro_Mgp_reannot", "PVAT_Macrophages_reannot", "PVAT_Macrophages_Lgals3_reannot", "PVAT_Int_monocytes", "PVAT_ILC", "PVAT_Conv_DC2", "PVAT_Class_monocytes", 
-             "PVAT_Granulocytes_reannot", "PVAT_Conv_DC1", "PVAT_Endothelialcells_reannot", "PVAT_EC_rgs5_reannot", "PVAT_VSMCs_reannot", "PVAT_MAST_reannot")
-
+sctlist <- c("PVAT_Vps37bRamp3Cd8Tmem", "PVAT_NK", "PVAT_Lef1Tcf7Cd4Tcells", "PVAT_Lef1Tcf7Cd8Tcells", "PVAT_Cd8Ccl5Nkg7CytotoxicTcells", "PVAT_Foxp3RegTcells", "PVAT_ILC", "PVAT_Bcells", "PVAT_Plasmacells", 
+             "PVAT_Macro_Folr2Lyve1", "PVAT_Macro_Trem2Lgals3", "PVAT_Macro_Pf4Retnla", "PVAT_Macro_infl", "PVAT_Mono_inter", "PVAT_Mono_clandnc", "PVAT_Conv_DC1", "PVAT_Migr_DC", "PVAT_Mki67Top2acells", "PVAT_Fibro_Pi16",
+             "PVAT_Fibro_Ccl11", "PVAT_Fibro_Mgp", "PVAT_Fibro_Mfap", "PVAT_s100a9_a8Granulocytes", "PVAT_Gpihbp1Fabp4EC", "PVAT_VSMCs", "PVAT_Notch3lowVSMCs", "PVAT_Notch3highVSMCs", "PVAT_Mesothelialcells", "PVAT_MASTcells")
 
 for(i in 1:length(sctlist)) {                
   write.csv2(get(sctlist[i]),
@@ -1195,18 +1090,18 @@ for(i in 1:length(sctlist)) {
 }
 
 Idents(PVAT) <- "celltype.group"
-PVAT_Tcellresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "T cells_Late_disease", ident.2 = "T cells_Prelesion", verbose = FALSE)
+PVAT_Tcellresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "T cells_Obese", ident.2 = "T cells_Non-obese", verbose = FALSE)
 
-PVAT_Bcellresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
+PVAT_Bcellresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
 
-PVAT_NKcresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "NK cells_Late_disease", ident.2 = "NK cells_Prelesion", verbose = FALSE)
+PVAT_NKcresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "NK cells_Obese", ident.2 = "NK cells_Non-obese", verbose = FALSE)
 
-PVAT_Macrophageresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Macrophages activated_Late_disease", ident.2 = "Macrophages activated_Prelesion", verbose = FALSE)
-PVAT_Macrophageresponse2 <- FindMarkers(PVAT, only.pos = T, ident.1 = "Macrophages_Late_disease", ident.2 = "Macrophages_Prelesion", verbose = FALSE)
+PVAT_Macrophageresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Macrophages activated_Obese", ident.2 = "Macrophages activated_Non-obese", verbose = FALSE)
+PVAT_Macrophageresponse2 <- FindMarkers(PVAT, only.pos = T, ident.1 = "Macrophages_Obese", ident.2 = "Macrophages_Non-obese", verbose = FALSE)
 
-PVAT_Monocyteresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Monocytes_Late_disease", ident.2 = "Monocytes_Prelesion", verbose = FALSE)
+PVAT_Monocyteresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Monocytes_Obese", ident.2 = "Monocytes_Non-obese", verbose = FALSE)
 
-PVAT_Granulocyteresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
+PVAT_Granulocyteresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Granulocytes_Obese", ident.2 = "Granulocytes_Non-obese", verbose = FALSE)
 
 Idents(PVAT) <- "mouse.fine"
 DimPlot(PVAT, reduction = "umap", label = T , repel = T, label.size = 3) + NoLegend()
@@ -1253,7 +1148,7 @@ V1<-EnhancedVolcano(PVAT_Bcells_reannot_sub,
                     lab = rownames(PVAT_Bcells_reannot_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in PVAT B cells',
+                    title = 'Obese vs Non-obese in PVAT B cells',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1265,7 +1160,7 @@ V2<-EnhancedVolcano(PVAT_Cd4posT_sub,
                     lab = rownames(PVAT_Cd4posT_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in PVAT Cd4+ T cells',
+                    title = 'Obese vs Non-obese in PVAT Cd4+ T cells',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1277,7 +1172,7 @@ V3<-EnhancedVolcano(PVAT_Cd8posT_sub,
                     lab = rownames(PVAT_Cd8posT_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in PVAT Cd8+ T cells',
+                    title = 'Obese vs Non-obese in PVAT Cd8+ T cells',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1289,7 +1184,7 @@ V4<-EnhancedVolcano(PVAT_Macrophagesact_reannot_sub,
                     lab = rownames(PVAT_Macrophagesact_reannot_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in PVAT activated macrophages',
+                    title = 'Obese vs Non-obese in PVAT activated macrophages',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1301,7 +1196,7 @@ V5<-EnhancedVolcano(PVAT_Fibroact_reannot_sub,
                     lab = rownames(PVAT_Fibroact_reannot_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in PVAT activated fibroblasts',
+                    title = 'Obese vs Non-obese in PVAT activated fibroblasts',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1313,7 +1208,7 @@ V6<-EnhancedVolcano(PVAT_VSMCs_reannot_sub,
                     lab = rownames(PVAT_VSMCs_reannot_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in PVAT VSMCs',
+                    title = 'Obese vs Non-obese in PVAT VSMCs',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1334,35 +1229,36 @@ l4 <- FeaturePlot(Spleen, features = c("Ly6a", "Ly-6A-E-Sca-1")) +
 
 
 Idents(Spleen) <- "celltype.group"
-Spleen_Cd4posT <- FindMarkers(Spleen, only.pos = F, ident.1 = "Cd4+ Tcells_Late_disease", ident.2 = "Cd4+ Tcells_Prelesion", verbose = FALSE)
-Spleen_NK <- FindMarkers(Spleen, only.pos = F, ident.1 = "NK's_Late_disease", ident.2 = "NK's_Prelesion", verbose = FALSE)
-Spleen_Cd8posT <- FindMarkers(Spleen, only.pos = F, ident.1 = "Cd8+ Tcells_Late_disease", ident.2 = "Cd8+ Tcells_Prelesion", verbose = FALSE)
-Spleen_Cd8posCcl5posTeff <- FindMarkers(Spleen, only.pos = F, ident.1 = "Cd8+ Ccl5+ Teffs_Late_disease", ident.2 = "Cd8+ Ccl5+ Teffs_Prelesion", verbose = FALSE)
-Spleen_Cd4Foposxp3posTreg <- FindMarkers(Spleen, only.pos = F, ident.1 = "Cd4+ Foxp3+ Tregs_Late_disease", ident.2 = "Cd4+ Foxp3+ Tregs_Prelesion", verbose = FALSE)
-#MemBcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Memory B cells ?_Late_disease", ident.2 = "Memory B cells ?_Prelesion", verbose = FALSE)
-Spleen_Bcells_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "B cells_Late_disease", ident.2 = "B cells_Prelesion", verbose = FALSE)
-Spleen_Macrophagesact_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Macrophages activated_Late_disease", ident.2 = "Macrophages activated_Prelesion", verbose = FALSE)
-Spleen_Plasmacells_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Plasma cells ?_Late_disease", ident.2 = "Plasma cells ?_Prelesion", verbose = FALSE)
-Spleen_Dividing <- FindMarkers(Spleen, only.pos = F, ident.1 = "Dividing cells_Late_disease", ident.2 = "Dividing cells_Prelesion", verbose = FALSE)
-#Spleen_Fibro_Pi16 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Pi16+ Fibroblasts_Late_disease", ident.2 = "Pi16+ Fibroblasts_Prelesion", verbose = FALSE)
-#Spleen_Fibroblasts_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Fibroblasts_Late_disease", ident.2 = "Fibroblasts_Prelesion", verbose = FALSE)
-#Spleen_Fibro_Mgp_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Mgp+ Fibroblasts_Late_disease", ident.2 = "Mgp+ Fibroblasts_Prelesion", verbose = FALSE)
-#Spleen_Fibroact_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Fibroblasts activated_Late_disease", ident.2 = "Fibroblasts activated_Prelesion", verbose = FALSE)
-Spleen_Macrophages_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Macrophages_Late_disease", ident.2 = "Macrophages_Prelesion", verbose = FALSE)
-Spleen_Macrophages_Lgals3_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Lgals3+ Macrophages_Late_disease", ident.2 = "Lgals3+ Macrophages_Prelesion", verbose = FALSE)
-Spleen_Int_monocytes <- FindMarkers(Spleen, only.pos = F, ident.1 = "Intermediate monocytes_Late_disease", ident.2 = "Intermediate monocytes_Prelesion", verbose = FALSE)
-Spleen_ILC <- FindMarkers(Spleen, only.pos = F, ident.1 = "ILC's_Late_disease", ident.2 = "ILC's_Prelesion", verbose = FALSE)
-#NKcellsandorILC2 <- FindMarkers(Spleen, only.pos = F, ident.1 = "NKcells and ILC2's?_Late_disease", ident.2 = "NKcells and ILC2's?_Prelesion", verbose = FALSE)
-Spleen_Conv_DC2 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Conv DC2_Late_disease", ident.2 = "Conv DC2_Prelesion", verbose = FALSE)
-Spleen_Class_monocytes <- FindMarkers(Spleen, only.pos = F, ident.1 = "Classical and non-classical Monocytes_Late_disease", ident.2 = "Classical and non-classical Monocytes_Prelesion", verbose = FALSE)
-Spleen_Granulocytes_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Granulocytes_Late_disease", ident.2 = "Granulocytes_Prelesion", verbose = FALSE)
-Spleen_Conv_DC1 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Conv DC1_Late_disease", ident.2 = "Conv DC1_Prelesion", verbose = FALSE)
-#Nonclass_monocytes <- FindMarkers(Spleen, only.pos = F, ident.1 = "Non-classical monocytes_Late_disease", ident.2 = "Non-classical monocytes_Prelesion", verbose = FALSE)
-#Spleen_Endothelialcells_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Endothelial cells_Late_disease", ident.2 = "Endothelial cells_Prelesion", verbose = FALSE)
-#Spleen_EC_rgs5_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Late_disease", ident.2 = "Rgs5+ Endothelial cells_Prelesion", verbose = FALSE)
-#Spleen_VSMCs_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "VSMC's_Late_disease", ident.2 = "VSMC's_Prelesion", verbose = FALSE)
-Spleen_MAST_reannot <- FindMarkers(Spleen, only.pos = F, ident.1 = "Hdc+ Cpa3+ MAST cells_Late_disease", ident.2 = "Hdc+ Cpa3+ MAST cells_Prelesion", verbose = FALSE)
+SP_NK <- FindMarkers(Spleen, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
+SP_Lef1Tcf7Cd4Tcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
+SP_Lef1Tcf7Cd8Tcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
+SP_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
+SP_Foxp3RegTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
+SP_ILC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
+SP_Bcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
+SP_Plasmacells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
+SP_Macro_Folr2Lyve1 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
+SP_Macro_Pf4Retnla <- FindMarkers(Spleen, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
+SP_Macro_infl <- FindMarkers(Spleen, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
+SP_Mono_inter <- FindMarkers(Spleen, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
+SP_Mono_clandnc <- FindMarkers(Spleen, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
+SP_Conv_DC1 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
+SP_Migr_DC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
+SP_Mki67Top2acells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
+SP_s100a9_a8Granulocytes <- FindMarkers(Spleen, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
+SP_Gpihbp1Fabp4EC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
+SP_MASTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-obese", verbose = FALSE)
 
+sctlist <- c("SP_NK", "SP_Lef1Tcf7Cd4Tcells", "SP_Lef1Tcf7Cd8Tcells", "SP_Cd8Ccl5Nkg7CytotoxicTcells", "SP_Foxp3RegTcells", "SP_ILC", "SP_Bcells", "SP_Plasmacells", "SP_Macro_Folr2Lyve1", "SP_Macro_Pf4Retnla", 
+             "SP_Macro_infl", "SP_Mono_inter", "SP_Mono_clandnc", "SP_Conv_DC1", "SP_Migr_DC", "SP_Mki67Top2acells", "SP_s100a9_a8Granulocytes", "SP_Gpihbp1Fabp4EC", "SP_MASTcells")
+
+for(i in 1:length(sctlist)) {                
+  write.csv2(get(sctlist[i]),
+             paste("/scratch/project_2005050/Rstats/",
+                   sctlist[i],
+                   ".csv"),
+             row.names = TRUE)
+}
 
 sctlist <- c("Spleen_Cd4posT", "Spleen_Cd8posT", "Spleen_NK", "Spleen_Cd8posCcl5posTeff", "Spleen_Cd4Foposxp3posTreg", "Spleen_Bcells_reannot", "Spleen_Macrophagesact_reannot", "Spleen_Plasmacells_reannot", 
              "Spleen_Dividing", "Spleen_Macrophages_reannot", "Spleen_Macrophages_Lgals3_reannot", "Spleen_Int_monocytes", "Spleen_ILC", "Spleen_Conv_DC2", "Spleen_Class_monocytes", 
@@ -1385,7 +1281,7 @@ V1<-EnhancedVolcano(Spleen_Granulocytes_reannot_sub,
                     lab = rownames(Spleen_Granulocytes_reannot_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Late disease vs Prelesion in Spleen granulocytes',
+                    title = 'Obese vs Non-obese in Spleen granulocytes',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1417,6 +1313,7 @@ l4
 
 #### B cells ####
 
+#Check some known markers
 #Memory B cells
 FeaturePlot(TERVA2_harmony, features = c("Ptprc", "Cd80", "Nt5e", "Cd38", "Cd84", "Cd86", "Pax5", "Spib"))
 
@@ -1428,38 +1325,6 @@ FeaturePlot(TERVA2_harmony, features = c("Ptprc", "Ighm", "Cd38", "Cr2", "Cd22",
 
 #Marginal zone B cells
 FeaturePlot(TERVA2_harmony, features = c("Ptprc", "Ighm", "Ighd", "R3", "Cd9", "Cd22", "Cr1", "Pax5", "Ebf1", "Tcf3", "Slc22a2"))
-
-Idents(TERVA2_harmony) <- "celltype"
-Bcells <- subset(TERVA2_harmony, idents="B cells")
-
-Bcells <- RunPCA(Bcells, verbose = FALSE)
-ElbowPlot(Bcells)
-
-Bcells <- RunUMAP(Bcells, dims = 1:7) %>%
-  FindNeighbors(dims = 1:7)
-
-
-
-Bcells <- FindClusters(Bcells, resolution = 0)
-Bcells <- FindClusters(Bcells, resolution = 0.1) #This seems to be optimal resolution
-Bcells <- FindClusters(Bcells, resolution = 0.2) 
-Bcells <- FindClusters(Bcells, resolution = 0.3)
-Bcells <- FindClusters(Bcells, resolution = 0.4)
-Bcells <- FindClusters(Bcells, resolution = 0.5) 
-Bcells <- FindClusters(Bcells, resolution = 0.6) 
-Bcells <- FindClusters(Bcells, resolution = 0.7)
-Bcells <- FindClusters(Bcells, resolution = 0.8)
-Bcells <- FindClusters(Bcells, resolution = 0.9)
-Bcells <- FindClusters(Bcells, resolution = 1)
-b_cls1 <- clustree(Bcells)
-b_cls1
-
-
-Bcells <- SetIdent(Bcells, value = "RNA_snn_res.0.2")
-B_cell_subtypes1 <- DimPlot(Bcells, group.by = "Sample")
-B_cell_subtypes2 <- DimPlot(Bcells, group.by = "tissue_id")
-B_cell_subtypes3 <- DimPlot(Bcells, group.by = "RNA_snn_res.0.2")
-B_cell_subtypes1 + B_cell_subtypes2 + B_cell_subtypes3
 
 #Mem B cells
 DefaultAssay(Bcells) <- "ADT"
@@ -1485,74 +1350,98 @@ brna_f <- FeaturePlot(Bcells, features = c("Ptprc", "Ighd", "Cxcr5", "Cd23"))
 badt_f
 brna_f
 
+Idents(TERVA2_harmony) <- "celltype"
+Bcells <- subset(TERVA2_harmony, idents="B cells")
+
+Bcells <- RunPCA(Bcells, verbose = FALSE)
+ElbowPlot(Bcells)
+
+Bcells <- RunUMAP(Bcells, dims = 1:5) %>%
+  FindNeighbors(dims = 1:5)
+
+resolution.range <- seq(from = 0, to = 1.5, by = 0.1)
+Bcells <- FindClusters(Bcells, resolution = resolution.range, random.seed = 42)
+b_cls1 <- clustree(Bcells)
+b_cls1
+
+
+Bcells <- SetIdent(Bcells, value = "RNA_snn_res.0.1")
+B_cell_subtypes1 <- DimPlot(Bcells, group.by = "Sample")
+B_cell_subtypes2 <- DimPlot(Bcells, group.by = "tissue_id")
+B_cell_subtypes3 <- DimPlot(Bcells, group.by = "RNA_snn_res.0.1")
+B_cell_subtypes1 + B_cell_subtypes2 + B_cell_subtypes3
+
 Bcell_subtype_markers <- FindAllMarkers(Bcells, logfc.threshold = 0.15)
-Top10_Bcellmarkersbycl <- Bcell_subtype_markers %>% group_by(cluster) %>% top_n(n = 5, wt = avg_log2FC)
-DotPlot(Bcells, features = Top10_Bcellmarkersbycl$gene) +
+Top10_Bcellmarkersbycl <- Bcell_subtype_markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+DotPlot(Bcells, features = Top10_Bcellmarkersbycl$gene, scale = F) +
   theme(axis.text.x=element_text(angle=45, hjust=1))
+Bheat <- DoHeatmap(Bcells, features = Top10_Bcellmarkersbycl$gene)
 
-write.csv(Bcell_subtype_markers, "/scratch/project_2005050/Rstats/Bcell_subtype_markers.csv")
-write.csv(Top10_Bcellmarkersbycl, "/scratch/project_2005050/Rstats/Top10_Bcellmarkersbycl.csv")
-
-
-####
+(B_cell_subtypes1 + B_cell_subtypes2 + B_cell_subtypes3) / Bheat
 
 
-Bcells <- NormalizeData(Bcells, assay = "ADT", normalization.method = "CLR")
-Bcells <- ScaleData(Bcells, assay = "ADT")
-Bcells <- RunPCA(Bcells, assay = "ADT", reduction.name = "apca", features = rownames(Bcells@assays$ADT))
-Bcells_harmony <- RunUMAP(Bcells_harmony, assay = "ADT", reduction.name = "apca", features = rownames(Bcells@assays$ADT))
+#### DP T cells ####
+
+Idents(TERVA2_harmony) <- "celltype"
+Tcells <- subset(TERVA2_harmony, idents=c("Vps37b+ Ramp3+ Cd8+ T memory cells", "Lef1+ Tcf7+ Cd4+ T cells", "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells", "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells", "Foxp3+ Regulatory T cells"))
+
+Tcells <- RunPCA(Tcells, verbose = FALSE)
+ElbowPlot(Tcells)
+
+Tcells <- RunUMAP(Tcells, dims = 1:6) %>%
+  FindNeighbors(dims = 1:6)
+
+resolution.range <- seq(from = 0, to = 1.5, by = 0.1)
+Tcells <- FindClusters(Tcells, resolution = resolution.range, random.seed = 42)
+t_cls1 <- clustree(Tcells)
+t_cls1
 
 
-Bcells_harmony <- Bcells %>% RunHarmony("Sample", plot_convergence = T)
+Tcells <- SetIdent(Tcells, value = "RNA_snn_res.0.8")
+T_cell_subtypes1 <- DimPlot(Tcells, group.by = "Sample", cols = cbcols)
+T_cell_subtypes2 <- DimPlot(Tcells, group.by = "tissue_id", cols = cbcols)
+T_cell_subtypes1.4 <- DimPlot(Tcells, group.by = "RNA_snn_res.1.4")
+T_cell_subtypes1.3 <- DimPlot(Tcells, group.by = "RNA_snn_res.1.3")
+T_cell_subtypes1.2 <- DimPlot(Tcells, group.by = "RNA_snn_res.1.2")
+T_cell_subtypes1.1 <- DimPlot(Tcells, group.by = "RNA_snn_res.1.1")
+T_cell_subtypes1.0 <- DimPlot(Tcells, group.by = "RNA_snn_res.1", label = T, label.box = T) + NoLegend()
+T_cell_subtypes0.9 <- DimPlot(Tcells, group.by = "RNA_snn_res.0.9")
+T_cell_subtypes0.8 <- DimPlot(Tcells, group.by = "RNA_snn_res.0.8")
+T_cell_subtypes0.7 <- DimPlot(Tcells, group.by = "RNA_snn_res.0.7")
 
-Bcells_harmony <- Bcells_harmony %>% 
-  RunUMAP(reduction = "harmony", dims = 1:10, verbose = F) %>% 
-  FindNeighbors(reduction = "harmony", k.param = 10, dims = 1:10)
-
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0)
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.1) #This seems to be optimal resolution
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.2) 
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.3)
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.4)
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.5) 
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.6) 
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.7)
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.8)
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 0.9)
-Bcells_harmony <- FindClusters(Bcells_harmony, resolution = 1)
-b_cls2 <- clustree(Bcells_harmony)
-b_cls2
+Tcells <- SetIdent(Tcells, value = "RNA_snn_res.1")
+Tcell_subtype_markers <- FindAllMarkers(Tcells, logfc.threshold = 0.15)
+Top10_Tcellmarkersbycl <- Tcell_subtype_markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+Theat <- DoHeatmap(Tcells, features = Top10_Tcellmarkersbycl$gene)
 
 
-Bcells_harmony <- RunUMAP(Bcells_harmony, assay = "ADT", reduction.name = "apca", features = rownames(Bcells@assays$ADT))
+Tfp <- FeaturePlot(Tcells, order = T, features = c("Cd4", "Cd8a", "Gzmk", "Sell","Cd44", "Foxp3", "Tigit", "Tox2", "Pdcd1"))
+(T_cell_subtypes1 + T_cell_subtypes2 + T_cell_subtypes3) / Tfp / Theat
 
+Exhausted_cd4 <- WhichCells(TERVA2_harmony, expression = Tigit > 0 & Tox2 > 0 & Pdcd1 > 0 & Cd4 > 0)
+Exhausted_cd8 <- WhichCells(TERVA2_harmony, expression = Tigit > 0 & Tox2 > 0 & Pdcd1 > 0 & Cd8a > 0)
+DimPlot(TERVA2_harmony, cells.highlight = Exhausted_cd4, split.by = "tissue_id")
+DimPlot(TERVA2_harmony, cells.highlight = Exhausted_cd8)
 
-DefaultAssay(Bcells_harmony) <- "ADT"
-badt <- FeaturePlot(Bcells_harmony, reduction = "umap", split.by = "tissue_id", features = c("CD40", "CD86", "CD27", "CD5"), cols = c("lightgrey", "darkgreen"))
-DefaultAssay(Bcells_harmony) <- "RNA"
-brna <- FeaturePlot(Bcells_harmony, split.by = "tissue_id", features = c("Cd40", "Cd86", "Cd27", "Cd5"))
-badt
-brna
+#From reference (Not super helpful)
 
+sce <- as.SingleCellExperiment((DietSeurat(Tcells)))
+sce
 
-Bcells_harmony <- SetIdent(Bcells_harmony, value = "RNA_snn_res.0.1")
-B_cell_subtypes1_harm <- DimPlot(Bcells_harmony, group.by = "Sample")
-B_cell_subtypes2_harm <- DimPlot(Bcells_harmony, group.by = "tissue_id")
-B_cell_subtypes3_harm <- DimPlot(Bcells_harmony)
-B_cell_subtypes1_harm + B_cell_subtypes2_harm + B_cell_subtypes3_harm
+imm.mouse.fine <- SingleR(test= sce, assay.type.test = 1, ref = imm.ref, labels = imm.ref$label.fine)
+table(imm.mouse.fine$pruned.labels)
 
-Bcell_subtype_markers_harmony <- FindAllMarkers(Bcells_harmony, logfc.threshold = 0.15)
-Top10_Bcellmarkersbycl_harmony <- Bcell_subtype_markers_harmony %>% group_by(cluster) %>% top_n(n = 5, wt = avg_log2FC)
-DotPlot(Bcells_harmony, features = Top10_Bcellmarkersbycl_harmony$gene) +
-  theme(axis.text.x=element_text(angle=45, hjust=1))
+Tcells@meta.data$imm.mouse.fine <- imm.mouse.fine$pruned.labels
 
-write.csv(Bcell_subtype_markers_harmony, "/scratch/project_2005050/Rstats/Bcell_subtype_markers_harmony.csv")
-write.csv(Top10_Bcellmarkersbycl_harmony, "/scratch/project_2005050/Rstats/Top10_Bcellmarkersbycl_harmony.csv")
+Tcells <- SetIdent(Tcells, value = "imm.mouse.fine")
+T_imm_fine <- DimPlot(Tcells, label = T, label.box = T, repel = T, label.size = 3) + NoLegend()
 
+T_imm_fine
 
 
 ### Save whole data as H5 object ####
 
 SaveH5Seurat(object = TERVA2_harmony, overwrite = T, verbose = T)
+
 
 

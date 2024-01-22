@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
-setwd("/scratch/project_2005050/SPATIAL/")
+setwd("/scratch/project_2005050/Rstats/Spatial/")
 
 .libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1", .libPaths()))
 
@@ -129,7 +129,12 @@ C006C1_fp
 C004B1_fp  
 C006D1_fp
 ```
-*****
+
+```{r}
+C004B1_fp <- SpatialFeaturePlot(C004B1qc, slot = "data", features = c("CD74", "SPP1"), alpha = c(0.3, 1)) + 
+  plot_annotation("CD74 and SPP1 expression in sample B")
+```
+
 
 ```{r}
 Lgals3_interact <- SpatialFeaturePlot(C004A1, slot = "data", features = c("LGALS3"), interactive = TRUE)

@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
-setwd("/scratch/project_2005050/SPATIAL/")
+setwd("/scratch/project_2005050/Rstats/Spatial/")
 
 .libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1", .libPaths()))
 
