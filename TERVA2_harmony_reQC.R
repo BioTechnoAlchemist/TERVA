@@ -2,7 +2,8 @@
 setwd("/scratch/project_2005050/Rstats")
 .libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1/", .libPaths()))
 pacman::p_load(tidyverse, patchwork, cowplot, viridis, gridExtra, RColorBrewer, factoextra, clustree, harmony, colorBlindness, EnhancedVolcano)
-
+library(SeuratDisk, lib.loc = "/appl/soft/math/r-env/421/421-rpackages")
+library(Seurat, lib.loc = "/appl/soft/math/r-env/421/421-rpackages") #v4.1.1 (SeuratObject v4.1.0)
 
 #devtools::install_github('satijalab/seurat-data')
 #BiocManager::install("EnhancedVolcano")
@@ -14,9 +15,24 @@ pacman::p_load(tidyverse, patchwork, cowplot, viridis, gridExtra, RColorBrewer, 
 #BiocManager::install("clusterProfiler")
 #BiocManager::install("org.Mm.eg.db")
 
+#### Functions ####
+
+exit <- function(x){
+  list2env(x, envir = globalenv())
+  rm(x)
+}
+
+cutoff_p <- function(x) { #function to do the pruning
+  genes <- subset(x, p_val_adj < 0.05)
+  return(genes)
+}
+
+getObjName <- function(x) {
+  Y[substitute(x)[[1:length(Y)]]]
+}
+
 #### Load in H5 data ####
-library(SeuratDisk, lib.loc = "/appl/soft/math/r-env/421/421-rpackages")
-library(Seurat, lib.loc = "/appl/soft/math/r-env/421/421-rpackages") #v4.1.1 (SeuratObject v4.1.0)
+
 OBAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/LDAOafterQC2.h5Seurat") 
 NOBAO <- LoadH5Seurat("/scratch/project_2005050/Rstats/PLAOafterQC2.h5Seurat") 
 OBeWAT <- LoadH5Seurat("/scratch/project_2005050/Rstats/LD_eWATafterQC.h5Seurat")
@@ -377,8 +393,8 @@ TERVA2_harmony@meta.data$tissue_id <- as.factor(tissue_id)
 #saveRDS(TERVA2_harmony_allmarkers_wilcoxon, "TERVA2_harmony_allmarkers_wilcoxon_reQC.rds")
 Cluster_markers <- readRDS("TERVA2_harmony_allmarkers_wilcoxon_reQC.rds")
 
-#split <- split(TERVA2_harmony_allmarkers_wilcoxon, TERVA2_harmony_allmarkers_wilcoxon$cluster)
-#list2env(split, envir = globalenv())
+split <- split(Cluster_markers, Cluster_markers$cluster)
+list2env(split, envir = globalenv())
 
 top6 <- Cluster_markers %>%
   group_by(cluster) %>%
@@ -482,38 +498,38 @@ diseasestates
 #[31] "Notch3 low VSMCs"                             "Pecam1+ Cd5+ Col1a1+ Lum+ cells"       
 
 Idents(TERVA2_harmony) <- "celltype.group"
-Vps37bRamp3Cd8Tmem <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-obese", verbose = FALSE)
-NK <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
-Lef1Tcf7Cd4Tcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
-Lef1Tcf7Cd8Tcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
-Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
-Foxp3RegTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
-ILC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
-Bcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
-Plasmacells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
-Macro_Trem2Lgals3 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-obese", verbose = FALSE)
-Macro_Folr2Lyve1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
-Macro_Pf4Retnla <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
-Macro_infl <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
-Mono_inter <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
-Mono_clandnc <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
-Conv_DC1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
-Migr_DC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
-Mki67Top2acells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
-Fibro_Pi16 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-obese", verbose = FALSE)
-Fibro_Ccl11 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-obese", verbose = FALSE)
-Fibro_Mgp <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-obese", verbose = FALSE)
-Fibro_Il1b <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Il1b+ Fibroblasts_Obese", ident.2 = "Il1b+ Fibroblasts_Non-obese", verbose = FALSE)
-Fibro_Mfap <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-obese", verbose = FALSE)
-s100a9_a8Granulocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
-Gpihbp1Fabp4EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
-Rgs5EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Obese", ident.2 = "Rgs5+ Endothelial cells_Non-obese", verbose = FALSE)
-VSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-obese", verbose = FALSE)
-Notch3lowVSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Notch3 low VSMCs_Obese", ident.2 = "Notch3 low VSMCs_Non-obese", verbose = FALSE)
-Notch3highVSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Notch3 high VSMCs_Obese", ident.2 = "Notch3 high VSMCs_Non-obese", verbose = FALSE)
-Mesothelialcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-obese", verbose = FALSE)
-MASTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-obese", verbose = FALSE)
-Pecam1Cd5Col1a1Lumcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Obese", ident.2 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Non-obese", verbose = FALSE)
+Vps37bRamp3Cd8Tmem <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-Obese", verbose = FALSE)
+NK <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-Obese", verbose = FALSE)
+Lef1Tcf7Cd4Tcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-Obese", verbose = FALSE)
+Lef1Tcf7Cd8Tcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-Obese", verbose = FALSE)
+Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-Obese", verbose = FALSE)
+Foxp3RegTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-Obese", verbose = FALSE)
+ILC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-Obese", verbose = FALSE)
+Bcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-Obese", verbose = FALSE)
+Plasmacells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-Obese", verbose = FALSE)
+Macro_Trem2Lgals3 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-Obese", verbose = FALSE)
+Macro_Folr2Lyve1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-Obese", verbose = FALSE)
+Macro_Pf4Retnla <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-Obese", verbose = FALSE)
+Macro_infl <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-Obese", verbose = FALSE)
+Mono_inter <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-Obese", verbose = FALSE)
+Mono_clandnc <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-Obese", verbose = FALSE)
+Conv_DC1 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-Obese", verbose = FALSE)
+Migr_DC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-Obese", verbose = FALSE)
+Mki67Top2acells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-Obese", verbose = FALSE)
+Fibro_Pi16 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-Obese", verbose = FALSE)
+Fibro_Ccl11 <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-Obese", verbose = FALSE)
+Fibro_Mgp <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-Obese", verbose = FALSE)
+Fibro_Il1b <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Il1b+ Fibroblasts_Obese", ident.2 = "Il1b+ Fibroblasts_Non-Obese", verbose = FALSE)
+Fibro_Mfap <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-Obese", verbose = FALSE)
+s100a9_a8Granulocytes <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-Obese", verbose = FALSE)
+Gpihbp1Fabp4EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-Obese", verbose = FALSE)
+Rgs5EC <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Obese", ident.2 = "Rgs5+ Endothelial cells_Non-Obese", verbose = FALSE)
+VSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-Obese", verbose = FALSE)
+Notch3lowVSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Notch3 low VSMCs_Obese", ident.2 = "Notch3 low VSMCs_Non-Obese", verbose = FALSE)
+Notch3highVSMCs <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Notch3 high VSMCs_Obese", ident.2 = "Notch3 high VSMCs_Non-Obese", verbose = FALSE)
+Mesothelialcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-Obese", verbose = FALSE)
+MASTcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-Obese", verbose = FALSE)
+Pecam1Cd5Col1a1Lumcells <- FindMarkers(TERVA2_harmony, only.pos = F, ident.1 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Obese", ident.2 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Non-Obese", verbose = FALSE)
 
 sctlist <- c("Vps37bRamp3Cd8Tmem", "NK", "Lef1Tcf7Cd4Tcells","Lef1Tcf7Cd8Tcells", "Cd8Ccl5Nkg7CytotoxicTcells", "Foxp3RegTcells", "ILC", "Bcells", "Plasmacells", "Macro_Folr2Lyve1", "Macro_Trem2Lgals3", "Macro_Pf4Retnla", "Macro_infl", "Mono_inter", "Mono_clandnc", "Conv_DC1", "Migr_DC", 
              "Mki67Top2acells", "Fibro_Pi16", "Fibro_Ccl11", "Fibro_Mgp", "Fibro_Il1b", "Fibro_Mfap", "s100a9_a8Granulocytes", "Gpihbp1Fabp4EC", "Rgs5EC", "VSMCs", "Notch3lowVSMCs", "Notch3highVSMCs", "Mesothelialcells", "MASTcells", "Pecam1Cd5Col1a1Lumcells")
@@ -528,108 +544,27 @@ for(i in 1:length(sctlist)) {
 
 # Visualization of DE genes between NOB and OB (across tissues)
 
+X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Trem2Lgals3, Macro_infl, Macro_Pf4Retnla, Macro_Folr2Lyve1, Mono_inter, Vps37bRamp3Cd8Tmem, Migr_DC)
+Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Trem2+ Macrophages", "M1 Macrophages", "Retnla+ Macrophages", "Lyve1+ Macrophages", "Intermediate Monocytes", "Memory T cells", "Migratory DC's")
+names(X) <- paste0(Y)
 
-ev1 <- EnhancedVolcano(Fibro_Mgp,
-                       lab = rownames(Fibro_Mgp),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'DE profile of Mgp+ Fibroblasts',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
+EVS <- lapply(X, function(x) {
+  EnhancedVolcano(x,
+                  lab = rownames(x),
+                  x = 'avg_log2FC',
+                  y = 'p_val_adj',
+                  title = 'Differentially expressed genes',
+                  pCutoff = 1e-2,
+                  FCcutoff = 0.4,
+                  pointSize = 3.0,
+                  col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                  labSize = 6.0,
+                  titleLabSize = 15.0)
+  })
+exit(EVS)
 
-ev2 <- EnhancedVolcano(Fibro_Pi16,
-                       lab = rownames(Fibro_Pi16),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'DE profile of Pi16+ Fibroblasts',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-
-ev3 <- EnhancedVolcano(Macro_Trem2Lgals3,
-                       lab = rownames(Macro_Trem2Lgals3),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'DE profile of Trem2+ Lgals3+ Macrophages',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-
-ev4 <- EnhancedVolcano(Macro_Folr2Lyve1,
-                       lab = rownames(Macro_Folr2Lyve1),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'DE profile of Folr2+ Lyve1+ Macrophages',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev5 <- EnhancedVolcano(Macro_Pf4Retnla,
-                       lab = rownames(Macro_Pf4Retnla),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'DE profile of Pf4+ Retnla+ Macrophages',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev6 <- EnhancedVolcano(Mono_inter,
-                       lab = rownames(Mono_inter),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'DE profile of Intermediate monocytes',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev7 <- EnhancedVolcano(Vps37bRamp3Cd8Tmem,
-                       lab = rownames(Vps37bRamp3Cd8Tmem),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'DE profile of Cd8+ T memory cells',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-ev8 <- EnhancedVolcano(Migr_DC,
-                       lab = rownames(Migr_DC),
-                       x = 'avg_log2FC',
-                       y = 'p_val_adj',
-                       title = 'DE profile of Migratory DCs',
-                       pCutoff = 1e-2,
-                       FCcutoff = 0.4,
-                       pointSize = 3.0,
-                       col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                       labSize = 6.0,
-                       titleLabSize = 15.0)
-
-(ev1+ev2+ev3+ev4)|(ev5+ev6+ev7+ev8)
-
-(ev1+ev2)/(ev3+ev4)
+`Activated Fibroblasts` + `Pi16+ Fibroblasts`
+(`Trem2+ Macrophages` + `M1 Macrophages`) / (`Retnla+ Macrophages` + `Lyve1+ Macrophages`)
 
 #### GSEA analysis with clusterProfiler ####
 
@@ -641,10 +576,7 @@ library(org.Mm.eg.db)
 background <- rownames(TERVA2_harmony@assays$RNA@counts)
 
 #Cut off genes which have a adjusted p-value bigger than 0.05 
-cutoff_p <- function(x) { #function to do the pruning
-  genes <- subset(x, p_val_adj < 0.05)
-  return(genes)
-}
+
 
 Mgp_fibr <- cutoff_p(Fibro_Mgp)
 Pi16_fibr <- cutoff_p(Fibro_Pi16)
@@ -689,31 +621,31 @@ Spleen <- subset(TERVA2_harmony, idents = "Spleen")
 
 # AO OB vs NOB DE's per cell type ####
 Idents(AO) <- "celltype.group"
-AO_Vps37bRamp3Cd8Tmem <- FindMarkers(AO, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-obese", verbose = FALSE)
-AO_NK <- FindMarkers(AO, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
-AO_Lef1Tcf7Cd4Tcells <- FindMarkers(AO, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
-AO_Lef1Tcf7Cd8Tcells <- FindMarkers(AO, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
-AO_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(AO, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
-AO_Foxp3RegTcells <- FindMarkers(AO, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
-AO_ILC <- FindMarkers(AO, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
-AO_Bcells <- FindMarkers(AO, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
-AO_Plasmacells <- FindMarkers(AO, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
-AO_Macro_Folr2Lyve1 <- FindMarkers(AO, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
-AO_Macro_Trem2Lgals3 <- FindMarkers(AO, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-obese", verbose = FALSE)
-AO_Macro_Pf4Retnla <- FindMarkers(AO, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
-AO_Macro_infl <- FindMarkers(AO, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
-AO_Mono_inter <- FindMarkers(AO, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
-AO_Mono_clandnc <- FindMarkers(AO, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
-AO_Conv_DC1 <- FindMarkers(AO, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
-AO_Migr_DC <- FindMarkers(AO, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
-AO_Mki67Top2acells <- FindMarkers(AO, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
-AO_Fibro_Pi16 <- FindMarkers(AO, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-obese", verbose = FALSE)
-AO_Fibro_Ccl11 <- FindMarkers(AO, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-obese", verbose = FALSE)
-AO_Fibro_Mgp <- FindMarkers(AO, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-obese", verbose = FALSE)
-AO_Fibro_Mfap <- FindMarkers(AO, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-obese", verbose = FALSE)
-AO_s100a9_a8Granulocytes <- FindMarkers(AO, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
-AO_Gpihbp1Fabp4EC <- FindMarkers(AO, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
-AO_VSMCs <- FindMarkers(AO, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-obese", verbose = FALSE)
+AO_Vps37bRamp3Cd8Tmem <- FindMarkers(AO, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-Obese", verbose = FALSE)
+AO_NK <- FindMarkers(AO, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-Obese", verbose = FALSE)
+AO_Lef1Tcf7Cd4Tcells <- FindMarkers(AO, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-Obese", verbose = FALSE)
+AO_Lef1Tcf7Cd8Tcells <- FindMarkers(AO, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-Obese", verbose = FALSE)
+AO_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(AO, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-Obese", verbose = FALSE)
+AO_Foxp3RegTcells <- FindMarkers(AO, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-Obese", verbose = FALSE)
+AO_ILC <- FindMarkers(AO, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-Obese", verbose = FALSE)
+AO_Bcells <- FindMarkers(AO, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-Obese", verbose = FALSE)
+AO_Plasmacells <- FindMarkers(AO, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-Obese", verbose = FALSE)
+AO_Macro_Folr2Lyve1 <- FindMarkers(AO, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-Obese", verbose = FALSE)
+AO_Macro_Trem2Lgals3 <- FindMarkers(AO, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-Obese", verbose = FALSE)
+AO_Macro_Pf4Retnla <- FindMarkers(AO, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-Obese", verbose = FALSE)
+AO_Macro_infl <- FindMarkers(AO, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-Obese", verbose = FALSE)
+AO_Mono_inter <- FindMarkers(AO, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-Obese", verbose = FALSE)
+AO_Mono_clandnc <- FindMarkers(AO, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-Obese", verbose = FALSE)
+AO_Conv_DC1 <- FindMarkers(AO, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-Obese", verbose = FALSE)
+AO_Migr_DC <- FindMarkers(AO, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-Obese", verbose = FALSE)
+AO_Mki67Top2acells <- FindMarkers(AO, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-Obese", verbose = FALSE)
+AO_Fibro_Pi16 <- FindMarkers(AO, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-Obese", verbose = FALSE)
+AO_Fibro_Ccl11 <- FindMarkers(AO, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-Obese", verbose = FALSE)
+AO_Fibro_Mgp <- FindMarkers(AO, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-Obese", verbose = FALSE)
+AO_Fibro_Mfap <- FindMarkers(AO, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-Obese", verbose = FALSE)
+AO_s100a9_a8Granulocytes <- FindMarkers(AO, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-Obese", verbose = FALSE)
+AO_Gpihbp1Fabp4EC <- FindMarkers(AO, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-Obese", verbose = FALSE)
+AO_VSMCs <- FindMarkers(AO, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-Obese", verbose = FALSE)
 
 
 sctlist <- c("AO_Vps37bRamp3Cd8Tmem", "AO_NK", "AO_Lef1Tcf7Cd4Tcells", "AO_Lef1Tcf7Cd8Tcells", "AO_Cd8Ccl5Nkg7CytotoxicTcells", "AO_Foxp3RegTcells", "AO_ILC", "AO_Bcells", "AO_Plasmacells",
@@ -747,91 +679,27 @@ D1 <- DotPlot(AO, features = topcells, idents = cells) +
   RotatedAxis() +
   ggtitle("Aorta")
 
-V1<-EnhancedVolcano(AO_Bcells_reannot,
-                lab = rownames(AO_Bcells_reannot),
-                x = 'avg_log2FC',
-                y = 'p_val_adj',
-                title = 'Obese vs Non-obese in aorta B cells',
-                pCutoff = 5e-2,
-                FCcutoff = 0.4,
-                pointSize = 3.0,
-                col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                labSize = 6.0,
-                titleLabSize = 15.0)
+#X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Trem2Lgals3, Macro_infl, Macro_Pf4Retnla, Macro_Folr2Lyve1, Mono_inter, Vps37bRamp3Cd8Tmem, Migr_DC)
+#Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Trem2+ Macrophages", "M1 Macrophages", "Retnla+ Macrophages", "Lyve1+ Macrophages", "Intermediate Monocytes", "Memory T cells", "Migratory DC's")
+names(X) <- paste0(Y)
 
-V2<-EnhancedVolcano(AO_Macrophages_Lgals3_reannot,
-                    lab = rownames(AO_Macrophages_Lgals3_reannot),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in aorta Lgals3+ macrophages',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
+EVS_AO <- lapply(X, function(x) {
+  EnhancedVolcano(x,
+                  lab = rownames(x),
+                  x = 'avg_log2FC',
+                  y = 'p_val_adj',
+                  title = 'Differentially expressed genes',
+                  pCutoff = 1e-2,
+                  FCcutoff = 0.4,
+                  pointSize = 3.0,
+                  col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                  labSize = 6.0,
+                  titleLabSize = 15.0)
+})
+exit(EVS_AO)
 
-V3<-EnhancedVolcano(AO_Macrophages_reannot_sub,
-                    lab = rownames(AO_Macrophages_reannot_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in aorta macrophages',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
+#`Activated Fibroblasts` + `Pi16+ Fibroblasts`
 
-V4<-EnhancedVolcano(AO_ILC_sub,
-                    lab = rownames(AO_ILC_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in aorta ILCs',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V5<-EnhancedVolcano(AO_Conv_DC2_sub,
-                    lab = rownames(AO_Conv_DC2_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in aorta conventional DC2s',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V6<-EnhancedVolcano(AO_Cd8posT_sub,
-                    lab = rownames(AO_Cd8posT_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in aorta Cd8+ T cells',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V4<-EnhancedVolcano(AO_Cd4posT_sub,
-                              lab = rownames(AO_Cd4posT_sub),
-                              x = 'avg_log2FC',
-                              y = 'p_val_adj',
-                              title = 'Obese vs Non-obese in aorta Cd4+ T cells',
-                              pCutoff = 5e-2,
-                              FCcutoff = 0.4,
-                              pointSize = 3.0,
-                              col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                              labSize = 6.0,
-                              titleLabSize = 15.0)
-
-grid.arrange(V1,V2,V3,V4,V5,V6, ncol=3)
 
 #### eWAT ####
 Idents(eWAT) <- "celltype.group"
@@ -892,35 +760,35 @@ VlnPlot(eWAT_ECs, features = "nFeature_RNA", group.by = "RNA_snn_res.0.2")
 ####
 
 Idents(eWAT) <- "celltype.group"
-eWAT_Vps37bRamp3Cd8Tmem <- FindMarkers(eWAT, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-obese", verbose = FALSE)
-eWAT_NK <- FindMarkers(eWAT, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
-eWAT_Lef1Tcf7Cd4Tcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
-eWAT_Lef1Tcf7Cd8Tcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
-eWAT_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
-eWAT_Foxp3RegTcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
-eWAT_ILC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
-eWAT_Bcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
-eWAT_Plasmacells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
-eWAT_Macro_Folr2Lyve1 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
-eWAT_Macro_Trem2Lgals3 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-obese", verbose = FALSE)
-eWAT_Macro_Pf4Retnla <- FindMarkers(eWAT, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
-eWAT_Macro_infl <- FindMarkers(eWAT, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
-eWAT_Mono_inter <- FindMarkers(eWAT, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
-eWAT_Mono_clandnc <- FindMarkers(eWAT, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
-eWAT_Conv_DC1 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
-eWAT_Migr_DC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
-eWAT_Mki67Top2acells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
-eWAT_Fibro_Pi16 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-obese", verbose = FALSE)
-eWAT_Fibro_Ccl11 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-obese", verbose = FALSE)
-eWAT_Fibro_Mgp <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-obese", verbose = FALSE)
-eWAT_Fibro_Il1b <- FindMarkers(eWAT, only.pos = F, ident.1 = "Il1b+ Fibroblasts_Obese", ident.2 = "Il1b+ Fibroblasts_Non-obese", verbose = FALSE)
-eWAT_Fibro_Mfap <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-obese", verbose = FALSE)
-eWAT_s100a9_a8Granulocytes <- FindMarkers(eWAT, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
-eWAT_Gpihbp1Fabp4EC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
-eWAT_Rgs5EC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Obese", ident.2 = "Rgs5+ Endothelial cells_Non-obese", verbose = FALSE)
-eWAT_VSMCs <- FindMarkers(eWAT, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-obese", verbose = FALSE)
-eWAT_Mesothelialcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-obese", verbose = FALSE)
-eWAT_Pecam1Cd5Col1a1Lumcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Obese", ident.2 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Non-obese", verbose = FALSE)
+eWAT_Vps37bRamp3Cd8Tmem <- FindMarkers(eWAT, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-Obese", verbose = FALSE)
+eWAT_NK <- FindMarkers(eWAT, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-Obese", verbose = FALSE)
+eWAT_Lef1Tcf7Cd4Tcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-Obese", verbose = FALSE)
+eWAT_Lef1Tcf7Cd8Tcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-Obese", verbose = FALSE)
+eWAT_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-Obese", verbose = FALSE)
+eWAT_Foxp3RegTcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-Obese", verbose = FALSE)
+eWAT_ILC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-Obese", verbose = FALSE)
+eWAT_Bcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-Obese", verbose = FALSE)
+eWAT_Plasmacells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-Obese", verbose = FALSE)
+eWAT_Macro_Folr2Lyve1 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-Obese", verbose = FALSE)
+eWAT_Macro_Trem2Lgals3 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-Obese", verbose = FALSE)
+eWAT_Macro_Pf4Retnla <- FindMarkers(eWAT, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-Obese", verbose = FALSE)
+eWAT_Macro_infl <- FindMarkers(eWAT, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-Obese", verbose = FALSE)
+eWAT_Mono_inter <- FindMarkers(eWAT, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-Obese", verbose = FALSE)
+eWAT_Mono_clandnc <- FindMarkers(eWAT, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-Obese", verbose = FALSE)
+eWAT_Conv_DC1 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-Obese", verbose = FALSE)
+eWAT_Migr_DC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-Obese", verbose = FALSE)
+eWAT_Mki67Top2acells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-Obese", verbose = FALSE)
+eWAT_Fibro_Pi16 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-Obese", verbose = FALSE)
+eWAT_Fibro_Ccl11 <- FindMarkers(eWAT, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-Obese", verbose = FALSE)
+eWAT_Fibro_Mgp <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-Obese", verbose = FALSE)
+eWAT_Fibro_Il1b <- FindMarkers(eWAT, only.pos = F, ident.1 = "Il1b+ Fibroblasts_Obese", ident.2 = "Il1b+ Fibroblasts_Non-Obese", verbose = FALSE)
+eWAT_Fibro_Mfap <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-Obese", verbose = FALSE)
+eWAT_s100a9_a8Granulocytes <- FindMarkers(eWAT, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-Obese", verbose = FALSE)
+eWAT_Gpihbp1Fabp4EC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-Obese", verbose = FALSE)
+eWAT_Rgs5EC <- FindMarkers(eWAT, only.pos = F, ident.1 = "Rgs5+ Endothelial cells_Obese", ident.2 = "Rgs5+ Endothelial cells_Non-Obese", verbose = FALSE)
+eWAT_VSMCs <- FindMarkers(eWAT, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-Obese", verbose = FALSE)
+eWAT_Mesothelialcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-Obese", verbose = FALSE)
+eWAT_Pecam1Cd5Col1a1Lumcells <- FindMarkers(eWAT, only.pos = F, ident.1 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Obese", ident.2 = "Pecam1+ Cd5+ Col1a1+ Lum+ cells_Non-Obese", verbose = FALSE)
 
 sctlist <- c("eWAT_Vps37bRamp3Cd8Tmem", "eWAT_NK", "eWAT_Lef1Tcf7Cd4Tcells", "eWAT_Lef1Tcf7Cd8Tcells", "eWAT_Cd8Ccl5Nkg7CytotoxicTcells", "eWAT_Foxp3RegTcells", "eWAT_ILC", "eWAT_Bcells", "eWAT_Plasmacells",
              "eWAT_Macro_Folr2Lyve1", "eWAT_Macro_Trem2Lgals3", "eWAT_Macro_Pf4Retnla", "eWAT_Macro_infl", "eWAT_Mono_inter", "eWAT_Mono_clandnc", "eWAT_Conv_DC1", "eWAT_Migr_DC", "eWAT_Mki67Top2acells",
@@ -939,11 +807,6 @@ for(i in 1:length(sctlist)) {
 background <- rownames(eWAT@assays$RNA@counts)
 
 #Cut off genes which have a adjusted p-value bigger than 0.05 
-cutoff_p <- function(x) { #function to do the pruning
-  genes <- subset(x, p_val_adj < 0.05)
-  return(genes)
-}
-
 Mgp_fibr <- cutoff_p(eWAT_Fibro_Mgp)
 lgals3 <- cutoff_p(eWAT_Macro_Trem2Lgals3)
 monoint <- cutoff_p(eWAT_Mono_inter)
@@ -982,53 +845,26 @@ D2 <- DotPlot(eWAT, features = topgenes, idents = cells) +
   ggtitle("eWAT")
 
 
-lapply(X, function(p){
-  EnhancedVolcano(p, lab = rownames(p), x = 'avg_log2FC', y = 'p_val_adj', title = 'DE profile of',
-                  pCutoff = 5e-2,
+#X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Trem2Lgals3, Macro_infl, Macro_Pf4Retnla, Macro_Folr2Lyve1, Mono_inter, Vps37bRamp3Cd8Tmem, Migr_DC)
+#Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Trem2+ Macrophages", "M1 Macrophages", "Retnla+ Macrophages", "Lyve1+ Macrophages", "Intermediate Monocytes", "Memory T cells", "Migratory DC's")
+names(X) <- paste0(Y)
+
+EVS_eWAT <- lapply(X, function(x) {
+  EnhancedVolcano(x,
+                  lab = rownames(x),
+                  x = 'avg_log2FC',
+                  y = 'p_val_adj',
+                  title = 'Differentially expressed genes',
+                  pCutoff = 1e-2,
                   FCcutoff = 0.4,
                   pointSize = 3.0,
                   col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
                   labSize = 6.0,
                   titleLabSize = 15.0)
 })
+exit(EVS_eWAT)
 
-V1<-EnhancedVolcano(eWAT_Fibro_Mgp,
-                    lab = rownames(eWAT_Fibro_Mgp),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'DE profile of eWAT Mgp+ Fibroblasts',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V2<-EnhancedVolcano(eWAT_Macro_Trem2Lgals3,
-                    lab = rownames(eWAT_Macro_Trem2Lgals3),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'DE profile of eWAT Lgals3+ macrophages',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V3<-EnhancedVolcano(eWAT_Mono_inter,
-                    lab = rownames(eWAT_Mono_inter),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in eWAT Intermediate monocytes',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-grid.arrange(V1,V2,V3, ncol=3)
+#`Activated Fibroblasts` + `Pi16+ Fibroblasts`
 
 #### PVAT ####
 Idents(PVAT) <- "celltype.group"
@@ -1046,35 +882,35 @@ RidgePlot(macros_PVAT, group.by = "group_id", features = c("Trem2", "Lgals3"))
 
 
 Idents(PVAT) <- "celltype.group"
-PVAT_Vps37bRamp3Cd8Tmem <- FindMarkers(PVAT, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-obese", verbose = FALSE)
-PVAT_NK <- FindMarkers(PVAT, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
-PVAT_Lef1Tcf7Cd4Tcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
-PVAT_Lef1Tcf7Cd8Tcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
-PVAT_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
-PVAT_Foxp3RegTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
-PVAT_ILC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
-PVAT_Bcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
-PVAT_Plasmacells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
-PVAT_Macro_Folr2Lyve1 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
-PVAT_Macro_Trem2Lgals3 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-obese", verbose = FALSE)
-PVAT_Macro_Pf4Retnla <- FindMarkers(PVAT, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
-PVAT_Macro_infl <- FindMarkers(PVAT, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
-PVAT_Mono_inter <- FindMarkers(PVAT, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
-PVAT_Mono_clandnc <- FindMarkers(PVAT, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
-PVAT_Conv_DC1 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
-PVAT_Migr_DC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
-PVAT_Mki67Top2acells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
-PVAT_Fibro_Pi16 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-obese", verbose = FALSE)
-PVAT_Fibro_Ccl11 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-obese", verbose = FALSE)
-PVAT_Fibro_Mgp <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-obese", verbose = FALSE)
-PVAT_Fibro_Mfap <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-obese", verbose = FALSE)
-PVAT_s100a9_a8Granulocytes <- FindMarkers(PVAT, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
-PVAT_Gpihbp1Fabp4EC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
-PVAT_VSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-obese", verbose = FALSE)
-PVAT_Notch3lowVSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Notch3 low VSMCs_Obese", ident.2 = "Notch3 low VSMCs_Non-obese", verbose = FALSE)
-PVAT_Notch3highVSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Notch3 high VSMCs_Obese", ident.2 = "Notch3 high VSMCs_Non-obese", verbose = FALSE)
-PVAT_Mesothelialcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-obese", verbose = FALSE)
-PVAT_MASTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-obese", verbose = FALSE)
+PVAT_Vps37bRamp3Cd8Tmem <- FindMarkers(PVAT, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-Obese", verbose = FALSE)
+PVAT_NK <- FindMarkers(PVAT, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-Obese", verbose = FALSE)
+PVAT_Lef1Tcf7Cd4Tcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-Obese", verbose = FALSE)
+PVAT_Lef1Tcf7Cd8Tcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-Obese", verbose = FALSE)
+PVAT_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-Obese", verbose = FALSE)
+PVAT_Foxp3RegTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-Obese", verbose = FALSE)
+PVAT_ILC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-Obese", verbose = FALSE)
+PVAT_Bcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-Obese", verbose = FALSE)
+PVAT_Plasmacells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-Obese", verbose = FALSE)
+PVAT_Macro_Folr2Lyve1 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-Obese", verbose = FALSE)
+PVAT_Macro_Trem2Lgals3 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Trem2+ Lgals3+ Macrophages_Obese", ident.2 = "Trem2+ Lgals3+ Macrophages_Non-Obese", verbose = FALSE)
+PVAT_Macro_Pf4Retnla <- FindMarkers(PVAT, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-Obese", verbose = FALSE)
+PVAT_Macro_infl <- FindMarkers(PVAT, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-Obese", verbose = FALSE)
+PVAT_Mono_inter <- FindMarkers(PVAT, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-Obese", verbose = FALSE)
+PVAT_Mono_clandnc <- FindMarkers(PVAT, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-Obese", verbose = FALSE)
+PVAT_Conv_DC1 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-Obese", verbose = FALSE)
+PVAT_Migr_DC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-Obese", verbose = FALSE)
+PVAT_Mki67Top2acells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-Obese", verbose = FALSE)
+PVAT_Fibro_Pi16 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Cd248+ Pi16+ Fibroblasts_Obese", ident.2 = "Cd248+ Pi16+ Fibroblasts_Non-Obese", verbose = FALSE)
+PVAT_Fibro_Ccl11 <- FindMarkers(PVAT, only.pos = F, ident.1 = "Ccl11+ Fibroblasts_Obese", ident.2 = "Ccl11+ Fibroblasts_Non-Obese", verbose = FALSE)
+PVAT_Fibro_Mgp <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mgp+ Aebp1+ Activated fibroblasts_Obese", ident.2 = "Mgp+ Aebp1+ Activated fibroblasts_Non-Obese", verbose = FALSE)
+PVAT_Fibro_Mfap <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mfap4+ Fibroblasts_Obese", ident.2 = "Mfap4+ Fibroblasts_Non-Obese", verbose = FALSE)
+PVAT_s100a9_a8Granulocytes <- FindMarkers(PVAT, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-Obese", verbose = FALSE)
+PVAT_Gpihbp1Fabp4EC <- FindMarkers(PVAT, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-Obese", verbose = FALSE)
+PVAT_VSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Vascular smooth muscle cells_Obese", ident.2 = "Vascular smooth muscle cells_Non-Obese", verbose = FALSE)
+PVAT_Notch3lowVSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Notch3 low VSMCs_Obese", ident.2 = "Notch3 low VSMCs_Non-Obese", verbose = FALSE)
+PVAT_Notch3highVSMCs <- FindMarkers(PVAT, only.pos = F, ident.1 = "Notch3 high VSMCs_Obese", ident.2 = "Notch3 high VSMCs_Non-Obese", verbose = FALSE)
+PVAT_Mesothelialcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "Mesothelial cells_Obese", ident.2 = "Mesothelial cells_Non-Obese", verbose = FALSE)
+PVAT_MASTcells <- FindMarkers(PVAT, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-Obese", verbose = FALSE)
 
 
 sctlist <- c("PVAT_Vps37bRamp3Cd8Tmem", "PVAT_NK", "PVAT_Lef1Tcf7Cd4Tcells", "PVAT_Lef1Tcf7Cd8Tcells", "PVAT_Cd8Ccl5Nkg7CytotoxicTcells", "PVAT_Foxp3RegTcells", "PVAT_ILC", "PVAT_Bcells", "PVAT_Plasmacells", 
@@ -1090,18 +926,18 @@ for(i in 1:length(sctlist)) {
 }
 
 Idents(PVAT) <- "celltype.group"
-PVAT_Tcellresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "T cells_Obese", ident.2 = "T cells_Non-obese", verbose = FALSE)
+PVAT_Tcellresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "T cells_Obese", ident.2 = "T cells_Non-Obese", verbose = FALSE)
 
-PVAT_Bcellresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
+PVAT_Bcellresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-Obese", verbose = FALSE)
 
-PVAT_NKcresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "NK cells_Obese", ident.2 = "NK cells_Non-obese", verbose = FALSE)
+PVAT_NKcresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "NK cells_Obese", ident.2 = "NK cells_Non-Obese", verbose = FALSE)
 
-PVAT_Macrophageresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Macrophages activated_Obese", ident.2 = "Macrophages activated_Non-obese", verbose = FALSE)
-PVAT_Macrophageresponse2 <- FindMarkers(PVAT, only.pos = T, ident.1 = "Macrophages_Obese", ident.2 = "Macrophages_Non-obese", verbose = FALSE)
+PVAT_Macrophageresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Macrophages activated_Obese", ident.2 = "Macrophages activated_Non-Obese", verbose = FALSE)
+PVAT_Macrophageresponse2 <- FindMarkers(PVAT, only.pos = T, ident.1 = "Macrophages_Obese", ident.2 = "Macrophages_Non-Obese", verbose = FALSE)
 
-PVAT_Monocyteresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Monocytes_Obese", ident.2 = "Monocytes_Non-obese", verbose = FALSE)
+PVAT_Monocyteresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Monocytes_Obese", ident.2 = "Monocytes_Non-Obese", verbose = FALSE)
 
-PVAT_Granulocyteresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Granulocytes_Obese", ident.2 = "Granulocytes_Non-obese", verbose = FALSE)
+PVAT_Granulocyteresponse <- FindMarkers(PVAT, only.pos = T, ident.1 = "Granulocytes_Obese", ident.2 = "Granulocytes_Non-Obese", verbose = FALSE)
 
 Idents(PVAT) <- "mouse.fine"
 DimPlot(PVAT, reduction = "umap", label = T , repel = T, label.size = 3) + NoLegend()
@@ -1144,79 +980,26 @@ PVAT_VSMCs_reannot$gene <- rownames(PVAT_VSMCs_reannot)
 PVAT_VSMCs_reannot_sub <- filter(PVAT_VSMCs_reannot, !str_detect(gene, "AY036118")) %>%
   filter(!str_detect(gene, "^Gm"))
 
-V1<-EnhancedVolcano(PVAT_Bcells_reannot_sub,
-                    lab = rownames(PVAT_Bcells_reannot_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in PVAT B cells',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
+#X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Trem2Lgals3, Macro_infl, Macro_Pf4Retnla, Macro_Folr2Lyve1, Mono_inter, Vps37bRamp3Cd8Tmem, Migr_DC)
+#Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Trem2+ Macrophages", "M1 Macrophages", "Retnla+ Macrophages", "Lyve1+ Macrophages", "Intermediate Monocytes", "Memory T cells", "Migratory DC's")
+names(X) <- paste0(Y)
 
-V2<-EnhancedVolcano(PVAT_Cd4posT_sub,
-                    lab = rownames(PVAT_Cd4posT_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in PVAT Cd4+ T cells',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
+EVS_PVAT <- lapply(X, function(x) {
+  EnhancedVolcano(x,
+                  lab = rownames(x),
+                  x = 'avg_log2FC',
+                  y = 'p_val_adj',
+                  title = 'Differentially expressed genes',
+                  pCutoff = 1e-2,
+                  FCcutoff = 0.4,
+                  pointSize = 3.0,
+                  col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                  labSize = 6.0,
+                  titleLabSize = 15.0)
+})
+exit(EVS_PVAT)
 
-V3<-EnhancedVolcano(PVAT_Cd8posT_sub,
-                    lab = rownames(PVAT_Cd8posT_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in PVAT Cd8+ T cells',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V4<-EnhancedVolcano(PVAT_Macrophagesact_reannot_sub,
-                    lab = rownames(PVAT_Macrophagesact_reannot_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in PVAT activated macrophages',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V5<-EnhancedVolcano(PVAT_Fibroact_reannot_sub,
-                    lab = rownames(PVAT_Fibroact_reannot_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in PVAT activated fibroblasts',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V6<-EnhancedVolcano(PVAT_VSMCs_reannot_sub,
-                    lab = rownames(PVAT_VSMCs_reannot_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in PVAT VSMCs',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-grid.arrange(V1,V2,V3,V4,V5,V6, ncol=3)
+#`Activated Fibroblasts` + `Pi16+ Fibroblasts`
 
 
 #### Spleen ####
@@ -1229,25 +1012,25 @@ l4 <- FeaturePlot(Spleen, features = c("Ly6a", "Ly-6A-E-Sca-1")) +
 
 
 Idents(Spleen) <- "celltype.group"
-SP_NK <- FindMarkers(Spleen, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-obese", verbose = FALSE)
-SP_Lef1Tcf7Cd4Tcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-obese", verbose = FALSE)
-SP_Lef1Tcf7Cd8Tcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-obese", verbose = FALSE)
-SP_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-obese", verbose = FALSE)
-SP_Foxp3RegTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-obese", verbose = FALSE)
-SP_ILC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-obese", verbose = FALSE)
-SP_Bcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-obese", verbose = FALSE)
-SP_Plasmacells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-obese", verbose = FALSE)
-SP_Macro_Folr2Lyve1 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-obese", verbose = FALSE)
-SP_Macro_Pf4Retnla <- FindMarkers(Spleen, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-obese", verbose = FALSE)
-SP_Macro_infl <- FindMarkers(Spleen, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-obese", verbose = FALSE)
-SP_Mono_inter <- FindMarkers(Spleen, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-obese", verbose = FALSE)
-SP_Mono_clandnc <- FindMarkers(Spleen, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-obese", verbose = FALSE)
-SP_Conv_DC1 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-obese", verbose = FALSE)
-SP_Migr_DC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-obese", verbose = FALSE)
-SP_Mki67Top2acells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-obese", verbose = FALSE)
-SP_s100a9_a8Granulocytes <- FindMarkers(Spleen, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-obese", verbose = FALSE)
-SP_Gpihbp1Fabp4EC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-obese", verbose = FALSE)
-SP_MASTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-obese", verbose = FALSE)
+SP_NK <- FindMarkers(Spleen, only.pos = F, ident.1 = "Natural killer cells_Obese", ident.2 = "Natural killer cells_Non-Obese", verbose = FALSE)
+SP_Lef1Tcf7Cd4Tcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd4+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd4+ T cells_Non-Obese", verbose = FALSE)
+SP_Lef1Tcf7Cd8Tcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Obese", ident.2 = "Lef1+ Tcf7+ Cd8a+ Cd8b1+ T cells_Non-Obese", verbose = FALSE)
+SP_Cd8Ccl5Nkg7CytotoxicTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Obese", ident.2 = "Cd8+ Ccl5+ Nkg7+ Cytotoxic T cells_Non-Obese", verbose = FALSE)
+SP_Foxp3RegTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Foxp3+ Regulatory T cells_Obese", ident.2 = "Foxp3+ Regulatory T cells_Non-Obese", verbose = FALSE)
+SP_ILC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Innate lymphoid cells_Obese", ident.2 = "Innate lymphoid cells_Non-Obese", verbose = FALSE)
+SP_Bcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "B cells_Obese", ident.2 = "B cells_Non-Obese", verbose = FALSE)
+SP_Plasmacells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Plasma cells_Obese", ident.2 = "Plasma cells_Non-Obese", verbose = FALSE)
+SP_Macro_Folr2Lyve1 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Folr2+ Lyve1+ M2 Macrophages_Obese", ident.2 = "Folr2+ Lyve1+ M2 Macrophages_Non-Obese", verbose = FALSE)
+SP_Macro_Pf4Retnla <- FindMarkers(Spleen, only.pos = F, ident.1 = "Pf4+ Retnla+ Macrophages_Obese", ident.2 = "Pf4+ Retnla+ Macrophages_Non-Obese", verbose = FALSE)
+SP_Macro_infl <- FindMarkers(Spleen, only.pos = F, ident.1 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Obese", ident.2 = "Ccl4+ Cxcl2+ Ccl3+ Inflammatory Macrophages_Non-Obese", verbose = FALSE)
+SP_Mono_inter <- FindMarkers(Spleen, only.pos = F, ident.1 = "Intermediate monocytes_Obese", ident.2 = "Intermediate monocytes_Non-Obese", verbose = FALSE)
+SP_Mono_clandnc <- FindMarkers(Spleen, only.pos = F, ident.1 = "Classical and non-classical monocytes_Obese", ident.2 = "Classical and non-classical monocytes_Non-Obese", verbose = FALSE)
+SP_Conv_DC1 <- FindMarkers(Spleen, only.pos = F, ident.1 = "Conventional Dendritic cells DC1_Obese", ident.2 = "Conventional Dendritic cells DC1_Non-Obese", verbose = FALSE)
+SP_Migr_DC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Fscn1+ Apol7c+ Dendritic cells_Obese", ident.2 = "Fscn1+ Apol7c+ Dendritic cells_Non-Obese", verbose = FALSE)
+SP_Mki67Top2acells <- FindMarkers(Spleen, only.pos = F, ident.1 = "Mki67+ Top2a+ Proliferating cells_Obese", ident.2 = "Mki67+ Top2a+ Proliferating cells_Non-Obese", verbose = FALSE)
+SP_s100a9_a8Granulocytes <- FindMarkers(Spleen, only.pos = F, ident.1 = "s100a9+/a8+ Granulocytes_Obese", ident.2 = "s100a9+/a8+ Granulocytes_Non-Obese", verbose = FALSE)
+SP_Gpihbp1Fabp4EC <- FindMarkers(Spleen, only.pos = F, ident.1 = "Gpihbp1+ Fabp4+ Endothelial cells_Obese", ident.2 = "Gpihbp1+ Fabp4+ Endothelial cells_Non-Obese", verbose = FALSE)
+SP_MASTcells <- FindMarkers(Spleen, only.pos = F, ident.1 = "MAST cells_Obese", ident.2 = "MAST cells_Non-Obese", verbose = FALSE)
 
 sctlist <- c("SP_NK", "SP_Lef1Tcf7Cd4Tcells", "SP_Lef1Tcf7Cd8Tcells", "SP_Cd8Ccl5Nkg7CytotoxicTcells", "SP_Foxp3RegTcells", "SP_ILC", "SP_Bcells", "SP_Plasmacells", "SP_Macro_Folr2Lyve1", "SP_Macro_Pf4Retnla", 
              "SP_Macro_infl", "SP_Mono_inter", "SP_Mono_clandnc", "SP_Conv_DC1", "SP_Migr_DC", "SP_Mki67Top2acells", "SP_s100a9_a8Granulocytes", "SP_Gpihbp1Fabp4EC", "SP_MASTcells")
@@ -1281,7 +1064,7 @@ V1<-EnhancedVolcano(Spleen_Granulocytes_reannot_sub,
                     lab = rownames(Spleen_Granulocytes_reannot_sub),
                     x = 'avg_log2FC',
                     y = 'p_val_adj',
-                    title = 'Obese vs Non-obese in Spleen granulocytes',
+                    title = 'Obese vs Non-Obese in Spleen granulocytes',
                     pCutoff = 5e-2,
                     FCcutoff = 0.4,
                     pointSize = 3.0,
@@ -1438,6 +1221,36 @@ T_imm_fine <- DimPlot(Tcells, label = T, label.box = T, repel = T, label.size = 
 
 T_imm_fine
 
+#### Fibroblasts ####
+
+Idents(TERVA2_harmony) <- "celltype"
+Fibroblasts <- subset(TERVA2_harmony, idents=c("Ccl11+ Fibroblasts", "Cd248+ Pi16+ Fibroblasts", "Mfap4+ Fibroblasts", "Mgp+ Aebp1+ Activated fibroblasts","Il1b+ Fibroblasts"))
+
+Fibroblasts <- RunPCA(Fibroblasts, verbose = FALSE)
+ElbowPlot(Fibroblasts)
+
+Fibroblasts <- RunUMAP(Fibroblasts, dims = 1:10) %>%
+  FindNeighbors(dims = 1:10)
+
+resolution.range <- seq(from = 0, to = 1.5, by = 0.1)
+Fibroblasts <- FindClusters(Fibroblasts, resolution = resolution.range, random.seed = 42)
+Fibro_cls1 <- clustree(Fibroblasts)
+Fibro_cls1
+
+
+Fibroblasts <- SetIdent(Fibroblasts, value = "RNA_snn_res.0.3")
+Fibro_subtypes1 <- DimPlot(Fibroblasts, group.by = "Sample")
+Fibro_subtypes2 <- DimPlot(Fibroblasts, group.by = "tissue_id")
+Fibro_subtypes3 <- DimPlot(Fibroblasts, group.by = "RNA_snn_res.0.3")
+Fibro_subtypes1 + Fibro_subtypes2 + Fibro_subtypes3
+
+Fibro_subtype_markers <- FindAllMarkers(Fibroblasts, logfc.threshold = 0.15)
+Top10_Fibromarkersbycl <- Fibro_subtype_markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+DotPlot(Fibroblasts, features = Top10_Fibromarkersbycl$gene, scale = F) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+Fibroheat <- DoHeatmap(Fibroblasts, features = Top10_Fibromarkersbycl$gene)
+
+(Fibro_subtypes1 + Fibro_subtypes2 + Fibro_subtypes3) / Fibroheat
 
 ### Save whole data as H5 object ####
 
