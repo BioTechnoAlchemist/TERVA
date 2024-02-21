@@ -544,8 +544,8 @@ for(i in 1:length(sctlist)) {
 
 # Visualization of DE genes between NOB and OB (across tissues)
 
-X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Trem2Lgals3, Macro_infl, Macro_Pf4Retnla, Macro_Folr2Lyve1, Mono_inter, Vps37bRamp3Cd8Tmem, Migr_DC)
-Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Trem2+ Macrophages", "M1 Macrophages", "Retnla+ Macrophages", "Lyve1+ Macrophages", "Intermediate Monocytes", "Memory T cells", "Migratory DC's")
+X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Pf4Retnla, Mesothelialcells, Mono_inter, Plasmacells, Vps37bRamp3Cd8Tmem, VSMCs)
+Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Pf4+ Macrophages", "Mesothelial cells", "Intermediate monocytes", "Plasma cells", "T memomy cells", "VSMCs")
 names(X) <- paste0(Y)
 
 EVS <- lapply(X, function(x) {
@@ -553,7 +553,8 @@ EVS <- lapply(X, function(x) {
                   lab = rownames(x),
                   x = 'avg_log2FC',
                   y = 'p_val_adj',
-                  title = 'Differentially expressed genes',
+                  title = 'Differentially expressed genes in',
+                  subtitle = NULL,
                   pCutoff = 1e-2,
                   FCcutoff = 0.4,
                   pointSize = 3.0,
@@ -563,8 +564,10 @@ EVS <- lapply(X, function(x) {
   })
 exit(EVS)
 
-`Activated Fibroblasts` + `Pi16+ Fibroblasts`
-(`Trem2+ Macrophages` + `M1 Macrophages`) / (`Retnla+ Macrophages` + `Lyve1+ Macrophages`)
+(`Activated Fibroblasts` + `Pi16+ Fibroblasts`) / 
+  (`VSMCs` + `Mesothelial cells`) 
+`Intermediate monocytes` + `Plasma cells` +`T memomy cells`
+  
 
 #### GSEA analysis with clusterProfiler ####
 
@@ -679,26 +682,33 @@ D1 <- DotPlot(AO, features = topcells, idents = cells) +
   RotatedAxis() +
   ggtitle("Aorta")
 
-#X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Trem2Lgals3, Macro_infl, Macro_Pf4Retnla, Macro_Folr2Lyve1, Mono_inter, Vps37bRamp3Cd8Tmem, Migr_DC)
-#Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Trem2+ Macrophages", "M1 Macrophages", "Retnla+ Macrophages", "Lyve1+ Macrophages", "Intermediate Monocytes", "Memory T cells", "Migratory DC's")
-names(X) <- paste0(Y)
+AO1 <-  EnhancedVolcano(AO_Vps37bRamp3Cd8Tmem,
+                          lab = rownames(AO_Vps37bRamp3Cd8Tmem),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "Cd8+ Tmem cells",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
 
-EVS_AO <- lapply(X, function(x) {
-  EnhancedVolcano(x,
-                  lab = rownames(x),
-                  x = 'avg_log2FC',
-                  y = 'p_val_adj',
-                  title = 'Differentially expressed genes',
-                  pCutoff = 1e-2,
-                  FCcutoff = 0.4,
-                  pointSize = 3.0,
-                  col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                  labSize = 6.0,
-                  titleLabSize = 15.0)
-})
-exit(EVS_AO)
+AO2 <-  EnhancedVolcano(AO_Migr_DC,
+                          lab = rownames(AO_Migr_DC),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "Fscn1+ Apol7c+ Dendritic cells",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
 
-#`Activated Fibroblasts` + `Pi16+ Fibroblasts`
+AO1 + AO2
 
 
 #### eWAT ####
@@ -845,41 +855,53 @@ D2 <- DotPlot(eWAT, features = topgenes, idents = cells) +
   ggtitle("eWAT")
 
 
-#X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Trem2Lgals3, Macro_infl, Macro_Pf4Retnla, Macro_Folr2Lyve1, Mono_inter, Vps37bRamp3Cd8Tmem, Migr_DC)
-#Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Trem2+ Macrophages", "M1 Macrophages", "Retnla+ Macrophages", "Lyve1+ Macrophages", "Intermediate Monocytes", "Memory T cells", "Migratory DC's")
-names(X) <- paste0(Y)
+eWAT1 <-  EnhancedVolcano(eWAT_Fibro_Mgp,
+                          lab = rownames(eWAT_Fibro_Mgp),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "activated Mgp+ fibroblasts",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
 
-EVS_eWAT <- lapply(X, function(x) {
-  EnhancedVolcano(x,
-                  lab = rownames(x),
-                  x = 'avg_log2FC',
-                  y = 'p_val_adj',
-                  title = 'Differentially expressed genes',
-                  pCutoff = 1e-2,
-                  FCcutoff = 0.4,
-                  pointSize = 3.0,
-                  col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                  labSize = 6.0,
-                  titleLabSize = 15.0)
-})
-exit(EVS_eWAT)
+eWAT2 <-  EnhancedVolcano(eWAT_Macro_Trem2Lgals3,
+                          lab = rownames(eWAT_Macro_Trem2Lgals3),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "Trem2+ macrophages",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
+
+eWAT3 <-  EnhancedVolcano(eWAT_VSMCs,
+                          lab = rownames(eWAT_VSMCs),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "VSMCs",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
+
+
+eWAT1 + eWAT2 + eWAT3
 
 #`Activated Fibroblasts` + `Pi16+ Fibroblasts`
 
 #### PVAT ####
 Idents(PVAT) <- "celltype.group"
 DimPlot(PVAT, reduction = "umap", group.by = "group_id", label = T , repel = T, label.size = 3) + NoLegend()
-p3 <- DimPlot(PVAT, reduction = "umap", split.by = "group_id", group.by = "seurat_clusters", pt.size = 1.2, label = T , repel = T, label.size = 4) + NoLegend() + ggtitle("PVAT")
-l3 <- FeaturePlot(PVAT, features = c("Ly6a", "Ly-6A-E-Sca-1")) +
-  ggtitle("Ly-6A-E-Sca-1", subtitle = "PVAT")
-
-Idents(PVAT) <- "celltype"
-macros_PVAT <- subset(PVAT, idents = c("Macrophages", "Macrophages activated", "Lgals3+ Macrophages"))
-Idents(macros_PVAT) <- "group_id"
-FeaturePlot(macros_PVAT, split.by = "group_id", features = c("Trem2", "Lgals3"), blend = TRUE, cols = c("navy", "darkgoldenrod1"))
-FeaturePlot(macros_PVAT, split.by = "group_id", features = c("Lamp2", "Mrc1"), blend = TRUE, cols = c("navy", "darkgoldenrod1"))
-RidgePlot(macros_PVAT, group.by = "group_id", features = c("Trem2", "Lgals3"))
-
 
 Idents(PVAT) <- "celltype.group"
 PVAT_Vps37bRamp3Cd8Tmem <- FindMarkers(PVAT, only.pos = F, ident.1 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Obese", ident.2 = "Vps37b+ Ramp3+ Cd8+ T memory cells_Non-Obese", verbose = FALSE)
@@ -951,55 +973,68 @@ D3 <- DotPlot(PVAT, features = topgenes, idents = cells) +
   RotatedAxis() +
   ggtitle("PVAT")
 
+PVAT1 <-  EnhancedVolcano(PVAT_Fibro_Mgp,
+                          lab = rownames(PVAT_Fibro_Mgp),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "activated Mgp+ fibroblasts",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
 
-PVAT_Bcells_reannot$gene <- rownames(PVAT_Bcells_reannot)
-PVAT_Bcells_reannot_sub <- filter(PVAT_Bcells_reannot, !str_detect(gene, "^mt")) %>%
-  filter(!str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "^Gm")) %>%
-  filter(!str_detect(gene, "^Rp"))
+PVAT2 <-  EnhancedVolcano(PVAT_Fibro_Pi16,
+                          lab = rownames(PVAT_Fibro_Pi16),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "Pi16+ progenitor fibroblasts",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
 
-PVAT_Cd4posT$gene <- rownames(PVAT_Cd4posT)
-PVAT_Cd4posT_sub <- filter(PVAT_Cd4posT, !str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "^Rp")) %>%
-  filter(!str_detect(gene, "^Gm"))
+PVAT3 <-  EnhancedVolcano(PVAT_Gpihbp1Fabp4EC,
+                          lab = rownames(PVAT_Gpihbp1Fabp4EC),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "ECs",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
 
-PVAT_Cd8posT$gene <- rownames(PVAT_Cd8posT)
-PVAT_Cd8posT_sub <- filter(PVAT_Cd8posT, !str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "^Rp")) %>%
-  filter(!str_detect(gene, "^Gm"))
+PVAT4 <-  EnhancedVolcano(PVAT_Mono_inter,
+                          lab = rownames(PVAT_Mono_inter),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes in',
+                          subtitle = "intermediate monocytes",
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
 
-PVAT_Macrophagesact_reannot$gene <- rownames(PVAT_Macrophagesact_reannot)
-PVAT_Macrophagesact_reannot_sub <- filter(PVAT_Macrophagesact_reannot, !str_detect(gene, "Gm8797"))
 
-PVAT_Fibroact_reannot$gene <- rownames(PVAT_Fibroact_reannot)
-PVAT_Fibroact_reannot_sub <- filter(PVAT_Fibroact_reannot, !str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "^Gm")) %>%
-  filter(!str_detect(gene, "^Rp"))
+(PVAT1 + PVAT2) / (PVAT3 + PVAT4)
 
-PVAT_VSMCs_reannot$gene <- rownames(PVAT_VSMCs_reannot)
-PVAT_VSMCs_reannot_sub <- filter(PVAT_VSMCs_reannot, !str_detect(gene, "AY036118")) %>%
-  filter(!str_detect(gene, "^Gm"))
 
-#X <- list(Fibro_Mgp, Fibro_Pi16, Macro_Trem2Lgals3, Macro_infl, Macro_Pf4Retnla, Macro_Folr2Lyve1, Mono_inter, Vps37bRamp3Cd8Tmem, Migr_DC)
-#Y <- c("Activated Fibroblasts", "Pi16+ Fibroblasts", "Trem2+ Macrophages", "M1 Macrophages", "Retnla+ Macrophages", "Lyve1+ Macrophages", "Intermediate Monocytes", "Memory T cells", "Migratory DC's")
-names(X) <- paste0(Y)
 
-EVS_PVAT <- lapply(X, function(x) {
-  EnhancedVolcano(x,
-                  lab = rownames(x),
-                  x = 'avg_log2FC',
-                  y = 'p_val_adj',
-                  title = 'Differentially expressed genes',
-                  pCutoff = 1e-2,
-                  FCcutoff = 0.4,
-                  pointSize = 3.0,
-                  col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                  labSize = 6.0,
-                  titleLabSize = 15.0)
-})
-exit(EVS_PVAT)
+#PVAT_VSMCs_reannot$gene <- rownames(PVAT_VSMCs_reannot)
+#PVAT_VSMCs_reannot_sub <- filter(PVAT_VSMCs_reannot, !str_detect(gene, "AY036118")) %>%
+#  filter(!str_detect(gene, "^Gm"))
 
-#`Activated Fibroblasts` + `Pi16+ Fibroblasts`
+
 
 
 #### Spleen ####
@@ -1043,36 +1078,6 @@ for(i in 1:length(sctlist)) {
              row.names = TRUE)
 }
 
-sctlist <- c("Spleen_Cd4posT", "Spleen_Cd8posT", "Spleen_NK", "Spleen_Cd8posCcl5posTeff", "Spleen_Cd4Foposxp3posTreg", "Spleen_Bcells_reannot", "Spleen_Macrophagesact_reannot", "Spleen_Plasmacells_reannot", 
-             "Spleen_Dividing", "Spleen_Macrophages_reannot", "Spleen_Macrophages_Lgals3_reannot", "Spleen_Int_monocytes", "Spleen_ILC", "Spleen_Conv_DC2", "Spleen_Class_monocytes", 
-             "Spleen_Granulocytes_reannot", "Spleen_Conv_DC1", "Spleen_MAST_reannot")
-
-for(i in 1:length(sctlist)) {            #This writes the result files into separate csv-files in your working directory       
-  write.csv2(get(sctlist[i]),
-             paste("/scratch/project_2005050/Rstats/",
-                   sctlist[i],
-                   ".csv"),
-             row.names = TRUE)
-}
-
-Spleen_Granulocytes_reannot$gene <- rownames(Spleen_Granulocytes_reannot)
-Spleen_Granulocytes_reannot_sub <- filter(Spleen_Granulocytes_reannot, !str_detect(gene, "^Rp")) %>%
-  filter(!str_detect(gene, "^Gm")) %>%
-  filter(!str_detect(gene, "^Ig"))
-
-V1<-EnhancedVolcano(Spleen_Granulocytes_reannot_sub,
-                    lab = rownames(Spleen_Granulocytes_reannot_sub),
-                    x = 'avg_log2FC',
-                    y = 'p_val_adj',
-                    title = 'Obese vs Non-Obese in Spleen granulocytes',
-                    pCutoff = 5e-2,
-                    FCcutoff = 0.4,
-                    pointSize = 3.0,
-                    col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
-                    labSize = 6.0,
-                    titleLabSize = 15.0)
-
-V1
 
 topgenes <- c("Cd74", "Tmsb10", "Lcp1", "Ftl1")
 
@@ -1238,10 +1243,10 @@ Fibro_cls1 <- clustree(Fibroblasts)
 Fibro_cls1
 
 
-Fibroblasts <- SetIdent(Fibroblasts, value = "RNA_snn_res.0.3")
+Fibroblasts <- SetIdent(Fibroblasts, value = "RNA_snn_res.0.1")
 Fibro_subtypes1 <- DimPlot(Fibroblasts, group.by = "Sample")
 Fibro_subtypes2 <- DimPlot(Fibroblasts, group.by = "tissue_id")
-Fibro_subtypes3 <- DimPlot(Fibroblasts, group.by = "RNA_snn_res.0.3")
+Fibro_subtypes3 <- DimPlot(Fibroblasts, group.by = "RNA_snn_res.0.1")
 Fibro_subtypes1 + Fibro_subtypes2 + Fibro_subtypes3
 
 Fibro_subtype_markers <- FindAllMarkers(Fibroblasts, logfc.threshold = 0.15)
