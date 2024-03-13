@@ -1237,6 +1237,9 @@ ElbowPlot(Fibroblasts)
 Fibroblasts <- RunUMAP(Fibroblasts, dims = 1:10) %>%
   FindNeighbors(dims = 1:10)
 
+Fibroblasts <- FindVariableFeatures(Fibroblasts, selection.method = "vst")
+Fibroblast_varfeat <- VariableFeatures(Fibroblasts)
+
 resolution.range <- seq(from = 0, to = 1.5, by = 0.1)
 Fibroblasts <- FindClusters(Fibroblasts, resolution = resolution.range, random.seed = 42)
 Fibro_cls1 <- clustree(Fibroblasts)
@@ -1247,7 +1250,8 @@ Fibroblasts <- SetIdent(Fibroblasts, value = "RNA_snn_res.0.1")
 Fibro_subtypes1 <- DimPlot(Fibroblasts, group.by = "Sample")
 Fibro_subtypes2 <- DimPlot(Fibroblasts, group.by = "tissue_id")
 Fibro_subtypes3 <- DimPlot(Fibroblasts, group.by = "RNA_snn_res.0.1")
-Fibro_subtypes1 + Fibro_subtypes2 + Fibro_subtypes3
+Fibro_subtypes4 <- DimPlot(Fibroblasts, group.by = "celltype")
+Fibro_subtypes1 + Fibro_subtypes2 + Fibro_subtypes3 + Fibro_subtypes4
 
 Fibro_subtype_markers <- FindAllMarkers(Fibroblasts, logfc.threshold = 0.15)
 Top10_Fibromarkersbycl <- Fibro_subtype_markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
@@ -1257,9 +1261,45 @@ Fibroheat <- DoHeatmap(Fibroblasts, features = Top10_Fibromarkersbycl$gene)
 
 (Fibro_subtypes1 + Fibro_subtypes2 + Fibro_subtypes3) / Fibroheat
 
+### Trajectory analysis of Fibroblasts ####
+#remotes::install_github("dynverse/dynfeature")
+#remotes::install_github("dynverse/dynplot")
+#remotes::install_github("elolab/Totem")
+library(dynfeature)
+library(dyndimred)
+library(dynplot)
+library(Totem)
+library(SingleCellExperiment)
+
+sce <- as.SingleCellExperiment(Fibroblasts, assay = "RNA")
+colLabels(sce) <- Fibroblasts@meta.data$celltype
+sce <- PrepareTotem(sce)
+
+sce <- RunDimRed(object = sce,
+                 dim.red.method = "lmds",
+                 dim.red.features = Fibroblast_varfeat,
+                 dim.reduction.par.list = list(ndim=5))
+
+dim_red <- dimred_mds(sce@assays@data@listData$logcounts, ndim=2)
+VizCellConnectivity(sce,viz.dim.red = dim_red)
+
+sce <- RunClustering(sce,
+                     k.range = 3:20,
+                     min.cluster.size = 15,
+                     N.clusterings=10000)
+
+sce <- SelectClusterings(sce, selection.method = 5,
+                         selection.N.models = 10,
+                         selection.stratified=FALSE,
+                         prior.clustering = Fibroblasts@meta.data$RNA_snn_res.0.1)
+ReturnTrajNames(sce)
+
 ### Save whole data as H5 object ####
 
 SaveH5Seurat(object = TERVA2_harmony, overwrite = T, verbose = T)
 
+# Get cell labels from the TERVA data
 
+cell_identities <- Idents(TERVA2_harmony)
+write.csv(cell_identities, file = "cell_identities_TERVA2_LM.csv")
 
