@@ -1,0 +1,563 @@
+---
+title: "Spatial analysis TERVA2"
+author: "Lea Mikkola"
+date: "2023-12-04"
+output:
+  html_document:
+    keep_md: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Remember to change the paths to your own directory after downloading the data.
+```{r}
+#install.packages('BiocManager')
+#BiocManager::install('glmGamPoi')
+setwd("~/Desktop/TERVA/TERVA2DATA/SPATIAL 2022/")
+library(Matrix)
+library(tidyverse)
+library(Seurat)
+library(patchwork)
+library(hdf5r)
+library(viridis)
+library(clustree)
+library(glmGamPoi)
+library(gridExtra)
+
+```
+
+First load the data in with the Load_spatial R script or load an environment that contains the data.
+
+```{r Loading-data}
+# Load all Visium sections ####
+
+#### AORTA ####
+
+#A006D1
+A006D1<- Load10X_Spatial( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/AO_D1/filtered_feature_bc_matrix/', 
+                          filename = "filtered_feature_bc_matrix.h5", #name of the feature barcode matrix  
+                          assay = "Spatial", 
+                          slice = "V11L12098D1", # name of the tissue slice
+                          filter.matrix = TRUE, # use only spots that under a tissue 
+                          to.upper = FALSE, #converts all feature names to upper case
+                          image = Read10X_Image( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/AO_D1/spatial/',  
+                                                 image.name = "tissue_lowres_image.png", # name of the image file 
+                                                 filter.matrix = TRUE, # use only spots under the tissue 
+                                                 
+                          ),
+)
+
+#A006C1
+A006C1 <- Load10X_Spatial( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/AO_C1/filtered_feature_bc_matrix/',
+                           filename = "filtered_feature_bc_matrix.h5", 
+                           assay = "Spatial", 
+                           slice = "V11L12098C1", 
+                           filter.matrix = TRUE, 
+                           to.upper = FALSE, 
+                           image = Read10X_Image( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/AO_C1/spatial/',  
+                                                  image.name = "tissue_lowres_image.png", 
+                                                  filter.matrix = TRUE, 
+                                                  
+                           ),
+)
+
+#A004B1
+A004B1 <- Load10X_Spatial( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/AO_B1/filtered_feature_bc_matrix/', 
+                           filename = "filtered_feature_bc_matrix.h5", 
+                           assay = "Spatial", 
+                           slice = "V11L12098B1", 
+                           filter.matrix = TRUE, 
+                           to.upper = FALSE, 
+                           image = Read10X_Image( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/AO_B1/spatial/',  
+                                                  image.name = "tissue_lowres_image.png", 
+                                                  filter.matrix = TRUE, 
+                                                  
+                           ),
+)
+
+#A004A1
+A004A1 <- Load10X_Spatial( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/AO_A1/filtered_feature_bc_matrix/', 
+                           filename = "filtered_feature_bc_matrix.h5", 
+                           assay = "Spatial", 
+                           slice = "V11L12098A1",
+                           filter.matrix = TRUE, 
+                           to.upper = FALSE, 
+                           image = Read10X_Image( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/AO_A1/spatial/', 
+                                                  image.name = "tissue_lowres_image.png", 
+                                                  filter.matrix = TRUE, 
+                                                  
+                           ),
+)
+
+####CAROTID ARTERY####
+#C006D1
+C006D1<- Load10X_Spatial( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/CA_D1/filtered_feature_bc_matrix/', 
+                          filename = "filtered_feature_bc_matrix.h5", #name of the feature barcode matrix  
+                          assay = "Spatial", 
+                          slice = "V11L12070D1", # name of the tissue slice
+                          filter.matrix = TRUE, # use only spots that under a tissue 
+                          to.upper = FALSE, #converts all feature names to upper case
+                          image = Read10X_Image( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/CA_D1/spatial/',  
+                                                 image.name = "tissue_lowres_image.png", # name of the image file 
+                                                 filter.matrix = TRUE, # use only spots under the tissue 
+                                                 
+                          ),
+)
+
+#C006C1
+C006C1 <- Load10X_Spatial( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/CA_C1/filtered_feature_bc_matrix/',
+                           filename = "filtered_feature_bc_matrix.h5", 
+                           assay = "Spatial", 
+                           slice = "V11L12070C1", 
+                           filter.matrix = TRUE, 
+                           to.upper = FALSE, 
+                           image = Read10X_Image( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/CA_C1/spatial/',  
+                                                  image.name = "tissue_lowres_image.png", 
+                                                  filter.matrix = TRUE, 
+                                                  
+                           ),
+)
+
+#C004B1
+C004B1 <- Load10X_Spatial( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/CA_B1/filtered_feature_bc_matrix/', 
+                           filename = "filtered_feature_bc_matrix.h5", 
+                           assay = "Spatial", 
+                           slice = "V11L12070B1", 
+                           filter.matrix = TRUE, 
+                           to.upper = FALSE, 
+                           image = Read10X_Image( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/CA_B1/spatial/',  
+                                                  image.name = "tissue_lowres_image.png", 
+                                                  filter.matrix = TRUE, 
+                                                  
+                           ),
+)
+
+#C004A1
+C004A1 <- Load10X_Spatial( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/CA_A1/filtered_feature_bc_matrix/', 
+                           filename = "filtered_feature_bc_matrix.h5", 
+                           assay = "Spatial", 
+                           slice = "V11L12070BA1",
+                           filter.matrix = TRUE, 
+                           to.upper = FALSE, 
+                           image = Read10X_Image( 'Visium TERVA/DATA Space Ranger outs H5 AND IMAGES/CA_A1/spatial/', 
+                                                  image.name = "tissue_lowres_image.png", 
+                                                  filter.matrix = TRUE, 
+                                                  
+                           ),
+)
+
+```
+
+
+Create sample id's and then define a function to determine the names for plots later on. This requires that you define the names to your list of objects X with names(X) <- paste0(Y) where Y is list of names. 
+```{r Sample-ID-and-functions, results='hide'}
+A004A1@meta.data$sample_id <- "AOA1"
+A004B1@meta.data$sample_id <- "AOB1"
+A006C1@meta.data$sample_id <- "AOC1"
+A006D1@meta.data$sample_id <- "AOD1" 
+
+C004A1@meta.data$sample_id <- "CAA1"
+C004B1@meta.data$sample_id <- "CAB1"
+C006C1@meta.data$sample_id <- "CAC1"
+C006D1@meta.data$sample_id <- "CAD1" 
+
+getObjName <- function(x) {
+  sampleID = x@meta.data[["sample_id"]][1]
+  name = paste(sampleID)
+  return(name)
+}
+
+makeX <- function(x){
+  X <- c(A004A1, A004B1, A006C1, A006D1, C004A1, C004B1, C006C1, C006D1)
+  Y <- c("A004A1", "A004B1", "A006C1", "A006D1", "C004A1", "C004B1", "C006C1", "C006D1") 
+  names(X) <- paste0(Y)
+  return(X)
+}
+
+savedir = getwd()
+
+
+```
+
+
+*QC*
+
+```{r QC-Number-of-features, results='hide', fig.dpi=300, fig.width=50, fig.height=10}
+X <- makeX()
+
+L <- lapply(X, function(x) {
+  x@meta.data[["percent_mito"]] <- PercentageFeatureSet(x, "^MT-")
+  x@meta.data[["percent_ribo"]] <- PercentageFeatureSet(x, "^RP[SL]")
+  return(x)
+})
+
+Y <- c("A004A1", "A004B1", "A006C1", "A006D1", "C004A1", "C004B1", "C006C1", "C006D1") 
+names(L) <- paste0(Y)
+list2env(L, envir = globalenv())
+rm(L)
+
+#A004A1.qcF <- A004A1[, A004A1$nFeature_Spatial > 40] #Test different thresholds and visually inspect what would be suitable level.
+#A004B1.qcF <- A004B1[, A004B1$nFeature_Spatial > 40]
+#A006C1.qcF <- A006C1[, A006C1$nFeature_Spatial > 90]
+#A006D1.qcF <- A006D1[, A006D1$nFeature_Spatial > 90]
+#004A1.qcF <- C004A1[, C004A1$nFeature_Spatial > 60] 
+#C004B1.qcF <- C004B1[, C004B1$nFeature_Spatial > 60]
+#C006C1.qcF <- C006C1[, C006C1$nFeature_Spatial > 100]
+#C006D1.qcF <- C006D1[, C006D1$nFeature_Spatial > 100]
+
+#Z <- c(A004A1.qcF, A004B1.qcF, A006C1.qcF, A006D1.qcF, C004A1.qcF, C004B1.qcF, C006C1.qcF, C006D1.qcF)
+
+#Put Z into lapply below when testing different thresholds and X to visualize the general quality before quality control (QC).
+grid.arrange(grobs=lapply(X, function(x) {
+  SpatialFeaturePlot(x, features = "nFeature_Spatial") + 
+    guides(fill= guide_colorbar(barwidth = 10,
+                                title.position = "top",
+                                label.vjust = 1.5,
+                                ))}), ncol=8)
+
+X <- makeX()
+#Remove hemoglobin genes
+clean <- lapply(X, function(x) {
+  x <- x[!grepl("^HB.*-", rownames(x)), ]
+  return(x)
+})
+
+list2env(clean, envir = globalenv())
+rm(clean, Z)
+
+```
+
+```{r QC-Violin-and-spatial-feature-plots, results='hide', fig.dpi=300, fig.width=20, fig.height=6}
+A004A1 <- A004A1[, A004A1$nFeature_Spatial > 40 & A004A1$percent_mito < 15 & A004A1$percent_ribo < 20] 
+A004B1 <- A004B1[, A004B1$nFeature_Spatial > 40 & A004B1$percent_mito < 15 & A004B1$percent_ribo < 20] 
+A006C1 <- A006C1[, A006C1$nFeature_Spatial > 90 & A006C1$percent_mito < 15 & A006C1$percent_ribo < 20] 
+A006D1 <- A006D1[, A006D1$nFeature_Spatial > 90 & A006D1$percent_mito < 15 & A006D1$percent_ribo < 20] 
+C004A1 <- C004A1[, C004A1$nFeature_Spatial > 60 & C004A1$percent_mito < 15 & C004A1$percent_ribo < 20] 
+C004B1 <- C004B1[, C004B1$nFeature_Spatial > 60 & C004B1$percent_mito < 15 & C004B1$percent_ribo < 20] 
+C006C1 <- C006C1[, C006C1$nFeature_Spatial > 100 & C006C1$percent_mito < 15 & C006C1$percent_ribo < 20] 
+C006D1 <- C006D1[, C006D1$nFeature_Spatial > 100 & C006D1$percent_mito < 15 & C006D1$percent_ribo < 20] 
+
+
+X <- makeX()
+
+lapply(X, function(x) { #Violinplots
+  VlnPlot(x, features = c("nCount_Spatial", "nFeature_Spatial", "percent_mito", "percent_ribo"), pt.size = 0.1, ncol = 4) + 
+    plot_annotation(title = "Filtered reads for sample", subtitle = getObjName(x))
+})
+
+
+lapply(X, function(x) { #Spatial feature plots
+  SpatialFeaturePlot(x, features = c("nCount_Spatial", "nFeature_Spatial", "percent_mito", "percent_ribo"), ncol = 4, pt.size.factor = 2.5) + 
+    plot_annotation(title = "Filtered spots", subtitle = getObjName(x)) &
+    guides(fill= guide_colorbar(barwidth = 10,
+                                title.position = "top",
+                                label.vjust = 1.5))
+})
+
+```
+
+Normalization
+
+```{r Normalization, results='hide'}
+
+normalized_data <- lapply(X, function(x) {
+  x <- NormalizeData(x, assay = "Spatial", verbose = T)
+  x <- FindVariableFeatures(x)
+  x <- ScaleData(x, features = rownames(x))
+  return(x)
+})
+
+Y <- c("A004A1qc", "A004B1qc", "A006C1qc", "A006D1qc", "C004A1qc", "C004B1qc", "C006C1qc", "C006D1qc") 
+names(normalized_data) <- paste0(Y)
+list2env(normalized_data, envir = globalenv())
+rm(normalized_data)
+
+makeXqc <- function(x){
+  X <- c(A004A1qc, A004B1qc, A006C1qc, A006D1qc, C004A1qc, C004B1qc, C006C1qc, C006D1qc)
+  names(X) <- paste0(Y)
+  return(X)
+}
+
+X <- makeXqc()
+
+```
+
+Feature plots of genes of interest.
+
+```{r Genes-of-interest, results='hide', fig.dpi=300, fig.width=12, fig.height=15}
+A004A1_fp <- SpatialFeaturePlot(A004A1qc, features = c("CD74", "PI16", "APOE", "LY6E", "MGP", "C1QC", "COMP", "JCHAIN", "CXCL2", "HLA-DQA1", "HLA-DRB1", "ZFP36"), alpha = c(0.3, 1), pt.size.factor = 2.5) + 
+  plot_annotation("GOI's for A004A1")
+A006C1_fp <- SpatialFeaturePlot(A006C1qc, features = c("CD74", "PI16", "APOE", "LY6E", "MGP", "C1QC", "COMP", "JCHAIN", "CXCL2", "HLA-DQA1", "HLA-DRB1", "ZFP36"), alpha = c(0.3, 1), pt.size.factor = 2.5) + 
+  plot_annotation("Genes of interest in Aorta")
+
+A004B1_fp <- SpatialFeaturePlot(A004B1qc,features = c("CD74", "PI16", "APOE", "LY6E", "MGP", "C1QC", "COMP", "JCHAIN", "CXCL2", "HLA-DQA1", "HLA-DRB1", "ZFP36"), alpha = c(0.3, 1), pt.size.factor = 2.5) +
+  plot_annotation("GOI's for A004B1")
+A006D1_fp <- SpatialFeaturePlot(A006D1qc,features = c("CD74", "PI16", "APOE", "LY6E", "MGP", "C1QC", "COMP", "JCHAIN", "CXCL2", "HLA-DQA1", "HLA-DRB1", "ZFP36"), alpha = c(0.3, 1), pt.size.factor = 2.5) +
+  plot_annotation("GOI's for A006D1")
+
+C004A1_fp <- SpatialFeaturePlot(C004A1qc, features = c("CD74", "PI16", "APOE", "LY6E", "MGP", "C1QC", "COMP", "JCHAIN", "CXCL2", "HLA-DQA1", "HLA-DRB1", "ZFP36"), alpha = c(0.3, 1), pt.size.factor = 2.5) + 
+  plot_annotation("GOI's for C004A1")
+C006C1_fp <- SpatialFeaturePlot(C006C1qc, features = c("CD74", "PI16", "APOE", "LY6E", "MGP", "C1QC", "COMP", "JCHAIN", "CXCL2", "HLA-DQA1", "HLA-DRB1", "ZFP36"), alpha = c(0.3, 1), pt.size.factor = 2.5) + 
+  plot_annotation("GOI's for C006C1")
+
+C004B1_fp <- SpatialFeaturePlot(C004B1qc,features = c("CD74", "PI16", "APOE", "LY6E", "MGP", "C1QC", "COMP", "JCHAIN", "CXCL2", "HLA-DQA1", "HLA-DRB1", "ZFP36"), alpha = c(0.3, 1), pt.size.factor = 2.5) +
+  plot_annotation("Genes of interest in Carotid artery")
+C006D1_fp <- SpatialFeaturePlot(C006D1qc,features = c("CD74", "PI16", "APOE", "LY6E", "MGP", "C1QC", "COMP", "JCHAIN", "CXCL2", "HLA-DQA1", "HLA-DRB1", "ZFP36"), alpha = c(0.3, 1), pt.size.factor = 2.5) +
+  plot_annotation("GOI's for C006D1")
+
+A004B1_fp  
+A006C1_fp
+A004A1_fp  
+A006D1_fp
+C004B1_fp  
+C006C1_fp
+C004A1_fp  
+C006D1_fp
+
+ggsave(plot = A006C1_fp, filename = "GOIs_aorta.png", device = "png", width = 30, height = 30, units = "cm", dpi = 300)
+ggsave(plot = C004B1_fp, filename = "GOIs_ca.png", device = "png", width = 30, height = 30, units = "cm", dpi = 300)
+
+```
+
+#Run PCA
+```{r Principal-Component-Analysis, results='hide', fig.dpi=300, fig.width=8, fig.height=7}
+
+addpca <- lapply(X, function(x) {
+  x <- RunPCA(x, verbose = FALSE)
+  return(x)
+})
+
+lapply(addpca, ElbowPlot)
+
+names(addpca) <- paste0(Y)
+list2env(addpca, envir = globalenv())
+rm(addpca)
+
+X <- makeXqc()
+
+```
+
+Find neighbors and clusters and run UMAP.
+```{r Find-neighbors-clusters-and-run-UMAP, results='hide'}
+
+ncu_all <- lapply(X, function(x) {
+  x <- FindNeighbors(x, reduction = "pca", dims = 1:15) #The number of dimension was decided based on elbow plots. There weren't huge differences so an average across the samples is used for the maximum.
+  x <- RunUMAP(x, reduction = "pca", dims = 1:15)
+  return(x)
+})
+
+names(ncu_all) <- paste0(Y)
+list2env(ncu_all, envir = globalenv())
+rm(ncu_all)
+
+X <- makeXqc()
+
+
+```
+
+
+Run Clustree to determine the appropriate number of clusters 
+```{r Cluster-tree, results='hide', fig.dpi=300, fig.width=8, fig.height=9}
+clusters <- lapply(X, function(x){ #This run FindClusters with a range of resolutions that are saved into metadata and can be then used with the clustree function.
+  resolution.range <- seq(from = 0, to = 1, by = 0.1)
+  x <- FindClusters(x, resolution = resolution.range)
+})
+
+
+names(clusters) <- paste0(Y)
+list2env(clusters, envir = globalenv())
+
+lapply(clusters, function(x) {
+  clustree(x) + plot_annotation(title = " Clustertree for samples", subtitle = getObjName(x))
+} ) 
+
+rm(clusters)
+X <- makeXqc()
+```
+
+
+Plot UMAP and spatial dimensional plot (clustering on tissue)
+
+```{r Clusters, results='hide', fig.dpi=300, fig.width=30, fig.height=15}
+
+X <- lapply(X , function(x) {
+  Idents(x) <- "Spatial_snn_res.0.8"
+  return(x)
+  })
+
+names(X) <- paste0(Y)
+list2env(X, envir = globalenv())
+
+```
+
+Differential gene expression
+```{r Differential-Gene-Expression, results='hide', fig.dpi=300, fig.width=20, fig.height=15}
+
+Y <- c("A004A1_markers", "A004B1_markers", "A006C1_markers", "A006D1_markers", "C004A1_markers", "C004B1_markers", "C006C1_markers", "C006D1_markers")
+
+Markers <- lapply(X, function(x) {
+  Idents(x) <- "Spatial_snn_res.0.8"
+  FindAllMarkers(x)
+})
+names(Markers) <- paste0(Y)
+list2env(Markers, envir = globalenv())
+rm(Markers)
+
+#Save the markers lists to CSVs.
+for(i in 1:length(Y)) {                
+  write.csv(get(Y[i]),
+             paste("~/Desktop/TERVA/TERVA2DATA/SPATIAL 2022/",
+                   Y[i],
+                   ".csv"),
+             row.names = TRUE)
+}
+
+#Pick top logFC genes and make heatmap
+#Rerun GSEA with new marker lists
+
+top10 <- A004A1_markers %>%
+  subset(p_val_adj < 0.05) %>%
+  group_by(cluster) %>%
+  top_n(n = 10, wt = avg_log2FC)
+
+
+clusterheatmap <- DoHeatmap(subset(A004A1qc, downsample=500), features = top10$gene, size = 4, angle = 90, label = T, slot = "scale.data") + NoLegend() + 
+  theme(axis.text.y = element_text(size=12)) 
+
+p1 <- SpatialFeaturePlot(object = A004A1qc, features = rownames(A004A1_markers)[1:9], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for A004A1")
+p2 <- SpatialFeaturePlot(object = A004B1qc, features = rownames(A004B1_markers)[1:9], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for A004B1")  
+p3 <- SpatialFeaturePlot(object = A006C1qc, features = rownames(A006C1_markers)[1:9], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for A006C1")
+p4 <- SpatialFeaturePlot(object = A006D1qc, features = rownames(A006D1_markers)[1:9], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for A006D1")
+p5 <- SpatialFeaturePlot(object = C004A1qc, features = rownames(C004A1_markers)[1:9], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for C004A1")
+p6 <- SpatialFeaturePlot(object = C004B1qc, features = rownames(C004B1_markers)[1:9], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for C004B1")  
+p7 <- SpatialFeaturePlot(object = C006C1qc, features = rownames(C006C1_markers)[1:9], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for C006C1")
+p8 <- SpatialFeaturePlot(object = C006D1qc, features = rownames(C006D1_markers)[1:9], alpha = c(0.3, 1)) +
+  plot_annotation(title = "DEGs for C006D1")
+
+p1
+p3 
+p2 
+p4
+p5 
+p7 
+p6 
+p8
+```
+
+Compare aorta and carotid artery
+
+```{r Tissue comparison, results='hide'}
+
+combined_data <- merge(A004A1qc, c(A004B1qc, A006C1qc, A006D1qc, C004A1qc, C004B1qc, C006C1qc, C006D1qc))
+combined_data <- JoinLayers(combined_data)
+
+coldata <- as.data.frame(combined_data@meta.data$sample_id)
+coldata <- mutate(coldata,
+                  Tissue = case_when(
+                    startsWith(combined_data@meta.data$sample_id, "AO") ~ "Aorta",
+                    startsWith(combined_data@meta.data$sample_id, "CA") ~ "Carotid_artery"
+                  ))
+tissue_id <- coldata$Tissue
+combined_data@meta.data$tissue_id <- as.factor(tissue_id)
+
+Idents(combined_data) <- "tissue_id"
+combined_data <- ScaleData(combined_data, features = rownames(combined_data))
+
+AOvsCA_markers <- FindMarkers(combined_data, only.pos = F, ident.1 = "Aorta", ident.2 = "Carotid_artery", min.pct = 0.05)
+
+only_sig <- AOvsCA_markers %>% subset(p_val_adj < 0.05 & avg_log2FC > 1 | avg_log2FC < -1)
+write.csv(only_sig, file = "AOvsCAmarkers.csv", sep = ";", quote = F, row.names = T, dec = ",")
+
+
+```
+```{r volcanoplot, fig.dpi=300, fig.width=15, fig.height=15}
+AO_CA_volcano <- EnhancedVolcano::EnhancedVolcano(AOvsCA_markers,
+                          lab = rownames(AOvsCA_markers),
+                          x = 'avg_log2FC',
+                          y = 'p_val_adj',
+                          title = 'Differentially expressed genes between human Aorta and Carotid artery',
+                          pCutoff = 1e-2,
+                          FCcutoff = 0.4,
+                          pointSize = 3.0,
+                          col=c('grey', 'slateblue2', 'cyan2', 'cyan4'),
+                          labSize = 6.0,
+                          titleLabSize = 15.0)
+
+ggsave(plot = AO_CA_volcano, filename = "AorstavsCAvolcanoplot.png", device = "png", path = getwd(), dpi = 300, width = 30, height = 30, units = "cm")
+
+```
+
+```{r Immunoglobulins, results='hide', fig.dpi=300, fig.width=12, fig.height=15}
+
+A006C1_IG <- SpatialFeaturePlot(A006C1qc, features = c("IGHG2", "IGHG4", "IGLC7","IGLC1", "IGKC", "IGHG3"), alpha = c(0.3, 1), pt.size.factor = 2.5) + 
+  plot_annotation("Immunoglobulin expression in Aorta")
+
+
+
+C004A1_IG <- SpatialFeaturePlot(C004A1qc,features = c("IGHG2", "IGHG4", "IGLC7","IGLC1", "IGKC", "IGHG3"), alpha = c(0.3, 1), pt.size.factor = 2.5) +
+  plot_annotation("Immunoglobulin expression in Carotid artery")
+
+
+ 
+A006C1_IG
+C004A1_IG  
+
+ggsave(plot = A006C1_IG, filename = "Immunoglobulinsinaorta.png", device = "png", path = getwd(), dpi = 300, width = 20, height = 20, units = "cm")
+
+ggsave(plot = C004A1_IG, filename = "Immunoglobulinsinca.png", device = "png", path = getwd(), dpi = 300, width = 20, height = 20, units = "cm")
+```
+
+```{r CD74_macrophages, results='hide', fig.dpi=300, fig.width=12, fig.height=15}
+
+A006C1_CD74 <- SpatialFeaturePlot(A006C1qc, features = c("CD74", "CD68"), alpha = c(0.3, 1), pt.size.factor = 2.5) + 
+  plot_annotation("CD74 and macrophage marker expression in Aorta")
+
+
+
+C004A1_CD74 <- SpatialFeaturePlot(C004A1qc,features = c("CD74", "CD68"), alpha = c(0.3, 1), pt.size.factor = 2.5) +
+  plot_annotation("CD74 and macrophage marker expression in Carotid artery")
+
+
+ 
+A006C1_CD74
+C004A1_CD74  
+
+comb_cd74 <- A006C1_CD74 / C004A1_CD74 + plot_annotation(title = "CD74 and CD68 expression in Aorta (Top) and Carotid artery (bottom)")
+
+ggsave(plot = comb_cd74, filename = "CD74inaortaandca.png", device = "png", path = getwd(), dpi = 300, width = 20, height = 20, units = "cm")
+
+
+```
+
+```{r complement-genes, results='hide'}
+
+A006C1_CC <- SpatialFeaturePlot(A006C1qc, features = c("C4B", "C3", "C1QA", "C1QB", "C1QC","CFH","C1S", "C7"), alpha = c(0.3, 1), pt.size.factor = 2.5) + 
+  plot_annotation("Complement cascade component expression in Aorta")
+
+
+
+C004A1_CC <- SpatialFeaturePlot(C004A1qc,features = c("C4B", "C3", "C1QA", "C1QB", "C1QC","CFH","C1S", "C7"), alpha = c(0.3, 1), pt.size.factor = 2.5) +
+  plot_annotation("Complement cascade component expression in  Carotid artery")
+
+
+ 
+A006C1_CC
+C004A1_CC  
+
+comb_cc <- (A006C1_CC) | (C004A1_CC) + plot_annotation(title = "Complement cascade component expression in Aorta (left) and Carotid artery (right)")
+
+ggsave(plot = comb_cc, filename = "Complementactivation_aorta_ca.png", device = "png", path = getwd(), dpi = 300, width = 30, height = 20, units = "cm")
+
+
+```
