@@ -1,4 +1,5 @@
 ### Trajectory analysis of Fibroblasts in PVAT and eWAT ####
+# Author: Lea Mikkola
 
 setwd("~/Desktop/TERVA/TERVA2DATA/")
 library(Totem)
