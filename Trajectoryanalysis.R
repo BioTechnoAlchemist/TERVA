@@ -134,7 +134,7 @@ ReturnSmoothedTrajNetwork(sce,clustering.name = clustering_name)
 
 sce <- ChangeTrajRoot(sce,traj.name=clustering_name, root.cluster = 3) #Root changed here
 VizSmoothedTraj(sce,
-                traj.names = clustering _name,
+                traj.names = clustering_name,
                 viz.dim.red = dim_red,plot.pseudotime = FALSE)
 
 #With pseudotime
