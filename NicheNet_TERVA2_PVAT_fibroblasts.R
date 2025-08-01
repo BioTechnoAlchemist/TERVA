@@ -1,4 +1,5 @@
-#This script was created by Aydin Bölük and Lea Mikkola.
+# Cell-cell interaction analysis for TERVA project
+# This script was created by Aydin Bölük and Lea Mikkola.
 
 setwd("/scratch/project_2005050/Rstats/NicheNet/")
 
