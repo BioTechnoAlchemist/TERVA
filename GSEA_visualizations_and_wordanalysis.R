@@ -1,3 +1,6 @@
+# GSEA visualizations and word analysis for TERVA project 
+# Author: Lea Mikkola
+
 setwd("~/path")
 library(enrichplot)
 library(tidyverse)
@@ -12,7 +15,7 @@ capitalize_words <- function(words) {
   return(modified_string)
 }
 
-data_up <- read.csv("upregulated results/gProfiler_mmusculus_26-10-2023_13-18-42__intersections.csv", sep = ",") #This csv originates from a web interface run of g:profiler at https://biit.cs.ut.ee/gprofiler/gost.
+data_up <- read.csv("upregulated results/gProfiler_mmusculus_26-10-2023_13-18-42__intersections.csv", sep = ",") #Input here should be a csv originating from g:profiler, e.g. at https://biit.cs.ut.ee/gprofiler/gost.
 data_up <- data_up %>%
   mutate(term_name_mod = str_to_sentence(data_up$term_name), gene_name = sapply(intersections, capitalize_words)) # change gene names to mouse format and capitalize the first letter of the term sentences.
 data_down <- read.csv("downregulated results/gProfiler_mmusculus_12-06-2024_12-40-06__intersections.csv", sep = ",")
