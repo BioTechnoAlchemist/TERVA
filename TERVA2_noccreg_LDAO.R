@@ -1,4 +1,6 @@
 #### TERVA2 scRNA-seq experiment 2021 ####
+#Author: Lea Mikkola
+
 setwd("~/Desktop/TERVA/TERVA2DATA/")
 library(tidyverse)
 library(Seurat)
