@@ -68,7 +68,7 @@ VizSmoothedTraj(sce,
 
 ReturnSmoothedTrajNetwork(sce,clustering.name = clustering_name)
 
-#sce <- ChangeTrajRoot(sce,traj.name=clustering_name, root.cluster = 1) #Change the root cluster if necessary
+#sce <- ChangeTrajRoot(sce,traj.name=clustering_name, root.cluster = 1) #Change the root cluster if necessary. This should always be checked so that the root makes sense based on the biology.
 #VizSmoothedTraj(sce,
 #                traj.names = "3.133",
 #                viz.dim.red = dim_red,plot.pseudotime = FALSE)
@@ -132,10 +132,10 @@ VizSmoothedTraj(sce,
 
 ReturnSmoothedTrajNetwork(sce,clustering.name = clustering_name)
 
-#sce <- ChangeTrajRoot(sce,traj.name=clustering_name, root.cluster = 1) #Change the root cluster if necessary
-#VizSmoothedTraj(sce,
-#                traj.names = clustering _name,
-#                viz.dim.red = dim_red,plot.pseudotime = FALSE)
+sce <- ChangeTrajRoot(sce,traj.name=clustering_name, root.cluster = 3) #Root changed here
+VizSmoothedTraj(sce,
+                traj.names = clustering _name,
+                viz.dim.red = dim_red,plot.pseudotime = FALSE)
 
 #With pseudotime
 VizSmoothedTraj(sce,
