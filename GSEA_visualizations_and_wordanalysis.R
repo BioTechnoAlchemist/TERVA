@@ -1,4 +1,4 @@
-setwd("~/Desktop/TERVA/TERVA2DATA/DATA and result from CSC server/GSEA/PVAT/")
+setwd("~/path")
 library(enrichplot)
 library(tidyverse)
 library(multienrichjam)
@@ -12,10 +12,10 @@ capitalize_words <- function(words) {
   return(modified_string)
 }
 
-data_up <- read.csv("upregulated results/PVAT_Fibro_Mgp_gProfiler_mmusculus_26-10-2023_13-18-42__intersections.csv", sep = ",") #This originates from a web interface run of g:profiler at https://biit.cs.ut.ee/gprofiler/gost.
+data_up <- read.csv("upregulated results/gProfiler_mmusculus_26-10-2023_13-18-42__intersections.csv", sep = ",") #This csv originates from a web interface run of g:profiler at https://biit.cs.ut.ee/gprofiler/gost.
 data_up <- data_up %>%
   mutate(term_name_mod = str_to_sentence(data_up$term_name), gene_name = sapply(intersections, capitalize_words)) # change gene names to mouse format and capitalize the first letter of the term sentences.
-data_down <- read.csv("downregulated results/PVAT_MgpFibro_gProfiler_mmusculus_12-06-2024_12-40-06__intersections.csv", sep = ",")
+data_down <- read.csv("downregulated results/gProfiler_mmusculus_12-06-2024_12-40-06__intersections.csv", sep = ",")
 data_down <- data_down %>%
   mutate(term_name_mod = str_to_sentence(data_down$term_name), gene_name = sapply(intersections, capitalize_words))
 
@@ -59,7 +59,7 @@ down1 <- barplot(gp_mod_enrich_down, showCategory = 40, x = "GeneRatio", font.si
 down2 <- cnetplot(gp_mod_enrich_down, showCategory = 12, layout = "circle", colorEdge = TRUE, color.params = list(edge = "#005C5C")) + 
   theme(text = element_text(size = 16))
 
-PVAT <- (up1 + down1) /
+res <- (up1 + down1) /
   (up2 + down2)
 
 # Text analysis of the results ####
