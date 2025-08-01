@@ -1,4 +1,6 @@
 # Proportion of cell types in tissues by state
+# Author: Lea Mikkola
+
 setwd("/scratch/project_2005050/Rstats")
 
 Idents(TERVA2_harmony) <- "celltype"
