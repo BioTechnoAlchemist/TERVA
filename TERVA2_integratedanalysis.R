@@ -1,4 +1,6 @@
-#### TERVA2 data integration with harmony ####
+#### TERVA2 data integration with harmony and differential gene expression analyses ####
+# Author: Lea Mikkola
+
 setwd("/scratch/project_2005050/Rstats")
 .libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1/", .libPaths()))
 library(tidyverse) 
