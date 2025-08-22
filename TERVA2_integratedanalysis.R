@@ -2,7 +2,6 @@
 # Author: Lea Mikkola
 
 setwd("/scratch/project_2005050/Rstats")
-.libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1/", .libPaths()))
 library(tidyverse) 
 library(patchwork) 
 library(cowplot)
@@ -10,6 +9,7 @@ library(viridis)
 library(gridExtra)
 library(RColorBrewer)
 library(factoextra)
+.libPaths(c("/projappl/project_2005050/project_rpackages_4.1.1/", .libPaths()))
 library(clustree)
 library(harmony)
 library(colorBlindness)
